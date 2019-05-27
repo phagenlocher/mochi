@@ -54,12 +54,13 @@ let nnf fx =
   in
   let rec simp = function
     (* Boolean simplifications *)
-    | BinOp (And, Bool false, f) | BinOp (And, f, Bool false) -> f
+    | BinOp (And, Bool false, f) | BinOp (And, f, Bool false) -> Bool false
     | BinOp (Or, Bool true, f) | BinOp (Or, f, Bool true) -> Bool true
     | BinOp (Imp, Bool false, f) -> Bool true
     (* Until *)
     | BinOp (Until, f, Bool true) -> Bool true
     | BinOp (Until, f, Bool false) -> Bool false
+    | BinOp (Until, Bool false, f) -> f
     (* Release *)
     | BinOp (Release, f, Bool true) -> Bool true
     | BinOp (Release, f, Bool false) -> Bool false
@@ -72,7 +73,6 @@ let nnf fx =
     | BinOp (Wuntil, f1, f2) -> simp (BinOp (Until, f1, simp (BinOp (Or, f2, simp (UnOp (Globally, f1))))))
     (* Strong release *)
     | BinOp (Srelease, f1, f2) -> simp (BinOp (And, simp (BinOp (Release, f1, f2)), simp (UnOp (Finally, f1))))
-
     (* Globally and Finally *)
     | UnOp (Globally, UnOp (Globally, f)) -> simp (UnOp (Globally, f))
     | UnOp (Finally, UnOp (Finally, f)) -> simp (UnOp (Finally, f))

@@ -1,8 +1,12 @@
+open Ltl
 open Util
 
 let parse_args () =
   let file = ref "" in
-  Arg.parse ["-i", String (fun x -> file := x), "specifies the input file"] (fun x -> ()) "";
+  Arg.parse [
+    "-i", String (fun x -> file := x), "specifies the input file";
+    "-d", Unit (fun () -> Util.Debug.init true), "activate debug mode"
+  ] (fun x -> ()) "";
   !file
 
 let unravel = function Some x -> x | None -> failwith "impossible"
@@ -20,18 +24,19 @@ let read_file filename =
   String.concat " " (aux [])
 
 let parse_file filename =
-  read_file filename |> Ltl.parse_ltl
+  read_file filename |> parse_ltl
 
-let rec main () = 
+let rec main () =
   print_endline ("Input:");
   print_string ("   ");
-  let formula = unravel (Ltl.parse_ltl (read_line ())) in
+  let formula = unravel (parse_ltl (read_line ())) in
   print_endline ("Formula:");
   print_endline ("   " ^ (ltl_to_string formula));
   print_endline ("NNF:");
-  print_endline ("   " ^ (ltl_to_string (Ltl.nnf formula)));
+  print_endline ("   " ^ (ltl_to_string (nnf formula)));
   print_endline ("");
   main ()
 
 let _ =
+  let _ = parse_args () in
   main ()

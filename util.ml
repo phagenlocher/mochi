@@ -2,7 +2,15 @@ let string_list_to_string = String.concat ""
 
 let rec repeat_string i s = if i<=1 then s else s^(repeat_string (i-1) s)
 
-let debug x = print_endline x
+module Debug = struct 
+
+    let debug = ref false
+
+    let init x = debug := x
+
+    let debug x = if !debug then print_endline x
+
+end
 
 type ltl =
         | Bool of bool

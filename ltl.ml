@@ -1,4 +1,5 @@
 open Util
+open Util.Debug
 
 let remove_dublicates =
   List.fold_left 
@@ -73,7 +74,7 @@ let nnf fx =
     | BinOp (Wuntil, f1, f2) -> simp (BinOp (Until, f1, simp (BinOp (Or, f2, simp (UnOp (Globally, f1))))))
     (* Strong release *)
     | BinOp (Srelease, f1, f2) -> simp (BinOp (And, simp (BinOp (Release, f1, f2)), simp (UnOp (Finally, f1))))
-    (* Globally and Finally *)
+    (* Globally and Finally  *)
     | UnOp (Globally, UnOp (Globally, f)) -> simp (UnOp (Globally, f))
     | UnOp (Finally, UnOp (Finally, f)) -> simp (UnOp (Finally, f))
     | UnOp (Globally, f) -> BinOp (Release, Bool false, simp f)

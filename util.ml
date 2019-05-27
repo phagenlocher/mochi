@@ -52,6 +52,6 @@ let binop_to_string = function
 
 let rec ltl_to_string = function
         | Bool x -> string_of_bool x
-        | UnOp (op,x) -> (unop_to_string op)^(ltl_to_string x)
-        | BinOp (op,x1,x2) -> (ltl_to_string x1)^(binop_to_string op)^(ltl_to_string x2)
+        | UnOp (op,x) -> ("("^unop_to_string op)^(ltl_to_string x^")")
+        | BinOp (op,x1,x2) -> "("^(ltl_to_string x1)^(binop_to_string op)^(ltl_to_string x2)^")"
         | Var x -> x

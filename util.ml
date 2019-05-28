@@ -1,6 +1,32 @@
-let string_list_to_string = String.concat "" 
+(* Set like union on lists *)
+let rec list_union a = function
+  | [] -> a
+  | x::xs ->
+      if List.exists ((=) x) a then 
+        list_union a xs
+      else
+        list_union (x::a) xs
 
-let rec repeat_string i s = if i<=1 then s else s^(repeat_string (i-1) s)
+(* Set like removal for lists *)
+let list_remove p = List.filter (fun x -> not (p x))
+
+(* Set like difference for lists *)
+let list_diff a b =
+  list_remove (fun x -> List.exists ((=) x) b) a
+
+let list_to_string f l =
+    let res = List.fold_left (fun acc x -> acc^(f x)^";") "" l
+    in "["^res^"]"
+
+(* List.find_opt for hashtables *)
+let hashtbl_find_opt p ht =
+  Seq.fold_left (
+    fun acc x -> if (acc <> None) then acc else if (p x) then Some x else None
+  ) None (Hashtbl.to_seq_values ht)
+
+let seq_to_list s = 
+  Seq.fold_left (fun acc x -> x::acc) [] s
+  |> List.rev
 
 module Debug = struct 
 
@@ -8,7 +34,9 @@ module Debug = struct
 
     let init x = debug := x
 
-    let debug x = if !debug then print_endline x
+    let in_debug_mode () = !debug
+
+    let print x = if !debug then print_endline x
 
 end
 

@@ -1,6 +1,6 @@
 {
   open Parser
-  let debug x = Util.Debug.debug ("Lexer: Read '"^x^"'")
+  let debug x = Util.Debug.print ("Lexer: Read '"^x^"'")
 }
 
 rule token = parse

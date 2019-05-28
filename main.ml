@@ -33,8 +33,10 @@ let rec main () =
   print_endline ("Formula:");
   print_endline ("   " ^ (ltl_to_string formula));
   print_endline ("NNF:");
-  print_endline ("   " ^ (ltl_to_string (nnf formula)));
+  let nnff = nnf formula in
+  print_endline ("   " ^ (ltl_to_string (nnff)));
   print_endline ("");
+  let _ = Buchi.ltl_to_generalized_buchi nnff in
   main ()
 
 let _ =

@@ -1,5 +1,4 @@
 open Util
-open Util.Debug
 
 let remove_dublicates =
   List.fold_left 
@@ -31,7 +30,7 @@ let parse_ltl fs =
   in
   try
     let fs = (fix_variables fs) in
-    debug ("Fixed input formula: "^fs);
+    Debug.print ("Fixed input formula: "^fs);
     let lexbuf = Lexing.from_string fs in 
     Some (Parser.main Lexer.token lexbuf)
   with 
@@ -47,6 +46,17 @@ let subformulae fx =
     end
   in
   remove_dublicates (aux fx)
+
+let rec atomic_propositions = function
+  | Var p -> [p]
+  | Bool _ -> []
+  | UnOp (_, f) -> atomic_propositions f
+  | BinOp (_, f1, f2) -> (atomic_propositions f1) @ (atomic_propositions f2)
+
+let is_variable = function
+  | Var _ -> true
+  | UnOp (Not, Var _) -> true
+  | _ -> false
 
 let negate_formula f = UnOp (Not, f)
 

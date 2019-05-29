@@ -26,6 +26,19 @@ type generalized_buchi = {
   formula : ltl;
 }
 
+let normalize_buchi_ids {states;start;final;transitions;formula} =
+  let ids = List.map fst states in
+  let t = 
+    let nids = numbered_assoc ~start:(1) ids in
+    let aux o = List.assoc o nids in
+    aux
+  in
+  let states = List.map (fun (o,x) -> (t o, x)) states in
+  let start = List.map t start in
+  let final = List.map (fun l -> List.map t l) final in
+  let transitions = List.map (fun (i,o) -> (t i, t o)) transitions in
+  {states;start;final;transitions;formula} 
+
 let node_id {id;incoming;cur;old;next} = id
 
 (* Gerth et al. *)
@@ -137,6 +150,7 @@ let ltl_to_generalized_buchi formula =
   in
   expand {id=new_id (); incoming=[0]; cur=[formula]; old=[]; next=[]} (H.create 101)
   |> node_set_to_buchi
+  |> normalize_buchi_ids
 
 let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
   let aps = Ltl.atomic_propositions_ltl formula in
@@ -165,8 +179,9 @@ let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
     )
   ) "" states in
   Printf.sprintf 
-  "HOA: v1\nname: \"%s\"\n%s\nacc-name: generalized-Buchi\nAcceptance: %d %s\nAP: %d %s\n--BODY--\n%s\n--END--\n"
+  "HOA: v1\nname: \"%s\"\nStates: %d\n%s\nacc-name: generalized-Buchi\nAcceptance: %d %s\nAP: %d %s\n--BODY--\n%s\n--END--\n"
   (ltl_to_string formula)
+  (List.map fst states |> List.fold_left max 0)
   starts
   finn
   (if finn=0 then "t" else ("("^fins^")"))

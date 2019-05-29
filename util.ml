@@ -24,11 +24,11 @@ let hashtbl_find_opt p ht =
     fun acc x -> if (acc <> None) then acc else if (p x) then Some x else None
   ) None (Hashtbl.to_seq_values ht)
 
-let numbered_assoc xs =
+let numbered_assoc ?start:(start=0) xs =
   let rec aux n = function
     | [] -> []
     | x::xs -> (x,n)::(aux (n+1) xs)
-  in aux 0 xs
+  in aux start xs
 
 let rec all_assoc x = function
   | [] -> []

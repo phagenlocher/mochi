@@ -2,13 +2,15 @@ open Ltl
 open Util
 
 let interactive_mode = ref false
+let ltl_mode = ref false
 let formula = ref ""
 
 let parse_args () =
   Arg.parse [
     "-i", Unit (fun () -> interactive_mode := true), "activate interactive mode";
     "-f", String (fun x -> formula := x), "specify the LTL formula";
-    "-d", Unit (fun () -> Util.Debug.init true), "activate debug mode"
+    "-d", Unit (fun () -> Util.Debug.init true), "activate debug output";
+    "-l", Unit (fun () -> ltl_mode := true), "activate LTL mode (no Büchi translation)"
   ] (fun x -> ()) ""
 
 let unravel = function Some x -> x | None -> failwith "impossible"
@@ -45,6 +47,8 @@ let rec interactive_loop () =
 let main () =
   if !formula = "" then
     print_endline "No formula specified! Please do so with -f!"
+  else if !ltl_mode then
+    print_endline (ltl_to_string (nnf (unravel (parse_ltl !formula))))
   else
     let b = Buchi.ltl_to_generalized_buchi (nnf (unravel (parse_ltl !formula)))
     in print_endline (Buchi.hoa_of_generalized_buchi b)

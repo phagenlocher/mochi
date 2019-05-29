@@ -48,7 +48,7 @@ let ltl_to_generalized_buchi formula =
     let nodes = H.to_seq_values node_set |> seq_to_list in
     let states = List.map (
       fun {id;incoming;cur;old;next} -> 
-        id, (List.map Ltl.non_con_aps_ltl old |> List.flatten)
+          id, (List.filter Ltl.is_atomic_proposition old |> List.fold_left (fun acc x -> list_union acc [x]) [])
     ) nodes in
     let start = 
       List.filter (
@@ -111,8 +111,8 @@ let ltl_to_generalized_buchi formula =
                 node_set
               else
                 expand {node with old=(list_union node.old [f])} node_set
-          | UnOp (Next, f) ->
-              expand {node with old=list_union node.old [f]; next=list_union node.next [f]} node_set
+          | UnOp (Next, x) ->
+              expand {node with old=list_union node.old [f]; next=list_union node.next [x]} node_set
           | BinOp (Until, f1, f2) | BinOp (Release, f1, f2) | BinOp (Or, f1, f2) ->
               let n1 = {
                 id=new_id (); 

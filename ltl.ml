@@ -67,7 +67,7 @@ let rec non_con_aps_ltl l =
   Debug.print ("Non. con. atom. props.: "^(ltl_to_string l)^" -> "^(list_to_string ltl_to_string aps));
   aps
 
-let is_variable = function
+let is_atomic_proposition = function
   | Var _ -> true
   | UnOp (Not, Var _) -> true
   | _ -> false

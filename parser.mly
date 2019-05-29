@@ -22,6 +22,7 @@ main:
 expression:
         | bin_exp                       {$1}
         | un_exp                        {$1}
+        | LPAREN expression RPAREN      {$2}
         ;
 bin_exp:
         | expression binop expression   {BinOp ($2,$1,$3)} 
@@ -33,7 +34,6 @@ un_exp:
 atom:
         | bool                          {Bool ($1)}
         | VARIABLE                      {Var ($1)}
-        | LPAREN expression RPAREN      {$2}
         ;
 unop:
         | NOT                           {Not}

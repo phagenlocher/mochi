@@ -18,8 +18,8 @@ type node = {
   next : ltl list;
 }
 
-type gbuchi = {
-  states : int list;
+type generalized_buchi = {
+  states : (int * ltl list) list;
   start : int list;
   final : int list list;
   transitions : (int * int) list;
@@ -46,7 +46,10 @@ let ltl_to_generalized_buchi formula =
   let node_set_to_buchi node_set =
     (if Debug.in_debug_mode () then Debug.print (node_set_to_string node_set));
     let nodes = H.to_seq_values node_set |> seq_to_list in
-    let states = List.map node_id nodes in
+    let states = List.map (
+      fun {id;incoming;cur;old;next} -> 
+        id, (List.map Ltl.non_con_aps_ltl old |> List.flatten)
+    ) nodes in
     let start = 
       List.filter (
         fun {id;incoming;cur;old;next} -> List.exists ((=) 0) incoming
@@ -134,3 +137,39 @@ let ltl_to_generalized_buchi formula =
   in
   expand {id=new_id (); incoming=[0]; cur=[formula]; old=[]; next=[]} (H.create 101)
   |> node_set_to_buchi
+
+let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
+  let aps = Ltl.atomic_propositions_ltl formula in
+  let apss = List.map (fun x -> match x with Var p | UnOp (Not, Var p) -> "\""^p^"\"") aps |> String.concat " " in
+  let aps_assoc = numbered_assoc aps in
+  let ap_number x = List.assoc x aps_assoc in
+  let apsn = List.length aps in
+  let starts = String.concat "\n" (List.map string_of_int start |> List.map (fun x -> "Start: "^x)) in
+  let finn = List.length final in
+  let fin_assoc = numbered_assoc final in
+  let fin_numbers n = List.map (
+    fun x -> if List.exists ((=) n) x then List.assoc_opt x fin_assoc else None
+  ) final |> List.filter ((<>) None) |> List.map (fun (Some a) -> a) in
+  let fins = List.map (fun (_,x) -> "Inf("^(string_of_int x)^")") fin_assoc |> String.concat "&" in
+  let body = List.fold_left (
+    fun acc (id,x) -> 
+      acc^(
+        Printf.sprintf "\nState: [%s] %d %s\n%s"
+        (
+          let ns = (List.map ap_number x |> List.map (fun n -> (if Ltl.is_negated (List.nth aps n) then "!" else "")^(string_of_int n)) |> String.concat "&")
+          in (if ns="" then "t" else ns)
+        )
+        id
+        (let fn = fin_numbers id in if fn = [] then "" else "{"^(List.map string_of_int fn |> String.concat " ")^"}") 
+        ("    "^(List.map string_of_int (all_assoc id transitions) |> String.concat " "))
+    )
+  ) "" states in
+  Printf.sprintf 
+  "HOA: v1\nname: \"%s\"\n%s\nacc-name: generalized-Buchi\nAcceptance: %d %s\nAP: %d %s\n--BODY--\n%s\n--END--\n"
+  (ltl_to_string formula)
+  starts
+  finn
+  (if finn=0 then "t" else ("("^fins^")"))
+  apsn
+  apss
+  body

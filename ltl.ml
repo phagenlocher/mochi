@@ -47,15 +47,33 @@ let subformulae fx =
   in
   remove_dublicates (aux fx)
 
-let rec atomic_propositions = function
-  | Var p -> [p]
+let rec atomic_propositions_ltl = function
+  | Var p -> [Var p]
   | Bool _ -> []
-  | UnOp (_, f) -> atomic_propositions f
-  | BinOp (_, f1, f2) -> (atomic_propositions f1) @ (atomic_propositions f2)
+  | UnOp (Not, Var f) -> [UnOp (Not, Var f)]
+  | UnOp (_, f) -> atomic_propositions_ltl f
+  | BinOp (_, f1, f2) -> list_union (atomic_propositions_ltl f1) (atomic_propositions_ltl f2)
+
+let rec atomic_propositions l = List.map ltl_to_string (atomic_propositions_ltl l)
+
+(* Non contradicting atom. prop. *)
+let rec non_con_aps_ltl l = 
+  let aps = atomic_propositions_ltl l in
+  let aps = List.filter (
+    fun x -> match x with
+    | Var p -> not (List.exists ((=) (UnOp (Not, Var p))) aps)
+    | UnOp (Not, Var p) -> not (List.exists ((=) (Var p)) aps)
+  ) aps in
+  Debug.print ("Non. con. atom. props.: "^(ltl_to_string l)^" -> "^(list_to_string ltl_to_string aps));
+  aps
 
 let is_variable = function
   | Var _ -> true
   | UnOp (Not, Var _) -> true
+  | _ -> false
+
+let is_negated = function
+  | UnOp (Not,_) -> true
   | _ -> false
 
 let negate_formula f = UnOp (Not, f)

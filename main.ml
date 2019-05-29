@@ -1,13 +1,15 @@
 open Ltl
 open Util
 
+let interactive_mode = ref false
+let formula = ref ""
+
 let parse_args () =
-  let file = ref "" in
   Arg.parse [
-    "-i", String (fun x -> file := x), "specifies the input file";
+    "-i", Unit (fun () -> interactive_mode := true), "activate interactive mode";
+    "-f", String (fun x -> formula := x), "specify the LTL formula";
     "-d", Unit (fun () -> Util.Debug.init true), "activate debug mode"
-  ] (fun x -> ()) "";
-  !file
+  ] (fun x -> ()) ""
 
 let unravel = function Some x -> x | None -> failwith "impossible"
 
@@ -26,7 +28,7 @@ let read_file filename =
 let parse_file filename =
   read_file filename |> parse_ltl
 
-let rec main () =
+let rec interactive_loop () =
   print_endline ("Input:");
   print_string ("   ");
   let formula = unravel (parse_ltl (read_line ())) in
@@ -36,9 +38,22 @@ let rec main () =
   let nnff = nnf formula in
   print_endline ("   " ^ (ltl_to_string (nnff)));
   print_endline ("");
-  let _ = Buchi.ltl_to_generalized_buchi nnff in
-  main ()
+  let b = Buchi.ltl_to_generalized_buchi nnff in
+  print_endline (Buchi.hoa_of_generalized_buchi b);
+  interactive_loop ()
+
+let main () =
+  if !formula = "" then
+    print_endline "No formula specified! Please do so with -f!"
+  else
+    let b = Buchi.ltl_to_generalized_buchi (nnf (unravel (parse_ltl !formula)))
+    in print_endline (Buchi.hoa_of_generalized_buchi b)
 
 let _ =
-  let _ = parse_args () in
-  main ()
+  parse_args ();
+  begin
+    if !interactive_mode then
+      interactive_loop ()
+    else
+      main ()
+  end

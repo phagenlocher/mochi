@@ -24,6 +24,16 @@ let hashtbl_find_opt p ht =
     fun acc x -> if (acc <> None) then acc else if (p x) then Some x else None
   ) None (Hashtbl.to_seq_values ht)
 
+let numbered_assoc xs =
+  let rec aux n = function
+    | [] -> []
+    | x::xs -> (x,n)::(aux (n+1) xs)
+  in aux 0 xs
+
+let rec all_assoc x = function
+  | [] -> []
+  | (a,b)::xs -> if x=a then b::(all_assoc x xs) else all_assoc x xs
+
 let seq_to_list s = 
   Seq.fold_left (fun acc x -> x::acc) [] s
   |> List.rev
@@ -80,6 +90,7 @@ let binop_to_string = function
 
 let rec ltl_to_string = function
         | Bool x -> string_of_bool x
-        | UnOp (op,x) -> ("("^unop_to_string op)^(ltl_to_string x^")")
-        | BinOp (op,x1,x2) -> "("^(ltl_to_string x1)^(binop_to_string op)^(ltl_to_string x2)^")"
+        | UnOp (op,Var p) -> (unop_to_string op)^p
+        | UnOp (op,f) -> (unop_to_string op)^("("^(ltl_to_string f)^")")
+        | BinOp (op,x1,x2) -> "("^(ltl_to_string x1)^")"^(binop_to_string op)^"("^(ltl_to_string x2)^")"
         | Var x -> x

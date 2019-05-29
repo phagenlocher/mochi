@@ -181,7 +181,7 @@ let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
   Printf.sprintf 
   "HOA: v1\nname: \"%s\"\nStates: %d\n%s\nacc-name: generalized-Buchi\nAcceptance: %d %s\nAP: %d %s\n--BODY--\n%s\n--END--\n"
   (ltl_to_string formula)
-  (List.map fst states |> List.fold_left max 0)
+  (List.map fst states |> List.fold_left max 0 |> ((+) 1))
   starts
   finn
   (if finn=0 then "t" else ("("^fins^")"))

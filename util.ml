@@ -46,7 +46,7 @@ module Debug = struct
 
     let in_debug_mode () = !debug
 
-    let print x = if !debug then print_endline x
+    let print x = if !debug then Printf.fprintf stderr "%s\n" x
 
 end
 

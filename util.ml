@@ -1,3 +1,10 @@
+let remove_duplicates xs =
+  List.fold_left 
+  (
+    fun acc x -> 
+      if List.exists (fun z -> x=z) acc then acc else x::acc
+  ) [] xs
+
 (* Set like union on lists *)
 let rec list_union a = function
   | [] -> a

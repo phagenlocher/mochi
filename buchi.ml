@@ -104,16 +104,14 @@ let ltl_to_generalized_buchi formula =
     | BinOp (Or, _, _) -> []
   in
   let is_inconsistent node = 
-    let res = List.exists (
-      fun x -> List.exists (Ltl.is_negated_of x) node.cur
-    ) node.cur
-    in
-    (if res then Debug.print ("Dropping node:\n"^(node_to_string node)));
-    res
+    List.exists (fun x -> List.exists (Ltl.is_negated_of x) node.cur) node.cur
   in
   let rec expand node node_set = 
     if is_inconsistent node then 
+      begin
+      (Debug.print ("Dropping node:\n"^(node_to_string node)));
       node_set
+      end
     else
     match node.cur with
     | [] -> 
@@ -163,11 +161,20 @@ let ltl_to_generalized_buchi formula =
   |> node_set_to_buchi
   |> normalize_buchi_ids
 
-let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
+let atom_prop_assoc formula =
   let aps = Ltl.atomic_propositions_ltl formula in
-  let apss = List.map (fun x -> match x with Var p | UnOp (Not, Var p) -> "\""^p^"\"") aps |> String.concat " " in
+  List.map (fun x -> match x with UnOp (Not, Var p) -> Var p | x -> x) aps 
+  |> remove_duplicates
+
+let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
+  (Debug.print "Generating HOA...");
+  let aps = atom_prop_assoc formula in
+  let apss = List.map (fun x -> match x with Var p -> "\""^p^"\"") aps |> String.concat " " in
   let aps_assoc = numbered_assoc aps in
-  let ap_number x = List.assoc x aps_assoc in
+  let ap_number x = match x with
+    | Var p -> List.assoc x aps_assoc 
+    | UnOp (Not, Var p) -> List.assoc (Var p) aps_assoc
+  in
   let apsn = List.length aps in
   let starts = String.concat "\n" (List.map string_of_int start |> List.map (fun x -> "Start: "^x)) in
   let finn = List.length final in
@@ -181,7 +188,7 @@ let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
       acc^(
         Printf.sprintf "\nState: [%s] %d %s\n%s"
         (
-          let ns = (List.map ap_number x |> List.map (fun n -> (if Ltl.is_negated (List.nth aps n) then "!" else "")^(string_of_int n)) |> String.concat "&")
+          let ns = ((List.map (fun ap -> (if (Ltl.is_negated ap) then "!" else "")^(string_of_int (ap_number ap))) x) |> String.concat "&")
           in (if ns="" then "t" else ns)
         )
         id

@@ -1,12 +1,5 @@
 open Util
 
-let remove_dublicates =
-  List.fold_left 
-  (
-    fun acc x -> 
-      if List.exists (fun z -> x=z) acc then acc else x::acc
-  ) []
-
 let parse_ltl fs =
   let fix_variables fs =
     (* TODO: Fix lexer *)
@@ -45,7 +38,7 @@ let subformulae fx =
       | _ -> []
     end
   in
-  remove_dublicates (aux fx)
+  remove_duplicates (aux fx)
 
 let rec atomic_propositions_ltl = function
   | Var p -> [Var p]

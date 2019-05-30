@@ -2,21 +2,29 @@ open Util
 
 module H = Hashtbl
 
-type id_t = int
-
 let new_id =
-  let cur = ref (0) in
+  let cur = ref 0 in
   let aux () =
     incr cur; !cur
   in aux
 
 type node = {
-  id : id_t;
-  incoming : id_t list;
+  id : int;
+  incoming : int list;
   cur : ltl list;
   old : ltl list;
   next : ltl list;
 }
+
+let node_id {id;incoming;cur;old;next} = id
+
+let node_to_string {id;incoming;cur;old;next} =
+  Printf.sprintf "Id: %d\nIn: %s\nCur: %s\nOld: %s\nNext: %s\n\n"
+  id
+  (list_to_string string_of_int incoming)
+  (list_to_string ltl_to_string cur)
+  (list_to_string ltl_to_string old)
+  (list_to_string ltl_to_string next)
 
 type generalized_buchi = {
   states : (int * ltl list) list;
@@ -39,21 +47,12 @@ let normalize_buchi_ids {states;start;final;transitions;formula} =
   let transitions = List.map (fun (i,o) -> (t i, t o)) transitions in
   {states;start;final;transitions;formula} 
 
-let node_id {id;incoming;cur;old;next} = id
-
 (* Gerth et al. *)
 let ltl_to_generalized_buchi formula =
   let node_set_to_string node_set =
     Seq.fold_left (
-      fun acc {id;incoming;cur;old;next} ->
-        acc ^ (
-        Printf.sprintf "Id: %d\nIn: %s\nCur: %s\nOld: %s\nNext: %s\n\n"
-        id
-        (list_to_string string_of_int incoming)
-        (list_to_string ltl_to_string cur)
-        (list_to_string ltl_to_string old)
-        (list_to_string ltl_to_string next)
-        )
+      fun acc n ->
+        acc ^ (node_to_string n)
     ) "" (H.to_seq_values node_set)
   in
   let node_set_to_buchi node_set =
@@ -104,7 +103,19 @@ let ltl_to_generalized_buchi formula =
     | BinOp (Release, _, _) -> [f]
     | BinOp (Or, _, _) -> []
   in
-  let rec expand node node_set = match node.cur with
+  let is_inconsistent node = 
+    let res = List.exists (
+      fun x -> List.exists (Ltl.is_negated_of x) node.cur
+    ) node.cur
+    in
+    (if res then Debug.print ("Dropping node:\n"^(node_to_string node)));
+    res
+  in
+  let rec expand node node_set = 
+    if is_inconsistent node then 
+      node_set
+    else
+    match node.cur with
     | [] -> 
         begin
           match hashtbl_find_opt (fun x -> x.old = node.old && x.next = node.next) node_set with

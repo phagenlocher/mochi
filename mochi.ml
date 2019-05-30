@@ -10,7 +10,10 @@ let parse_args () =
     "-i", Unit (fun () -> interactive_mode := true), "activate interactive mode";
     "-f", String (fun x -> formula := x), "specify the LTL formula";
     "-d", Unit (fun () -> Util.Debug.init true), "activate debug output";
-    "-l", Unit (fun () -> ltl_mode := true), "activate LTL mode (no Büchi translation)"
+    "-l", Unit (fun () -> ltl_mode := true), "activate LTL mode (no Büchi translation)";
+    "-r", Int (fun i -> 
+      print_endline (ltl_to_string (Rand.rand_ltl 10 i)); exit 0
+    ), "print a random ltl formula with maximal depth of the given argument"
   ] (fun x -> ()) ""
 
 let unravel = function Some x -> x | None -> failwith "impossible"

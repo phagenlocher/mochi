@@ -197,7 +197,7 @@ let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
     )
   ) "" states in
   Printf.sprintf 
-  "HOA: v1\nname: \"%s\"\nStates: %d\n%s\nacc-name: generalized-Buchi\nAcceptance: %d %s\nAP: %d %s\n--BODY--\n%s\n--END--\n"
+  "HOA: v1\nname: \"%s\"\nStates: %d\n%s\nacc-name: generalized-Buchi\nAcceptance: %d %s\nAP: %d %s\n--BODY--%s\n--END--"
   (ltl_to_string formula)
   (List.length states)
   starts

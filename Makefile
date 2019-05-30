@@ -1,2 +1,5 @@
 all:
-	ocamlbuild -package str main.native
+	ocamlbuild -package str mochi.native
+
+clean:
+	ocamlbuild -clean

@@ -29,7 +29,7 @@ type generalized_buchi = {
 let normalize_buchi_ids {states;start;final;transitions;formula} =
   let ids = List.map fst states in
   let t = 
-    let nids = numbered_assoc ~start:(1) ids in
+    let nids = numbered_assoc ids in
     let aux o = List.assoc o nids in
     aux
   in
@@ -65,7 +65,7 @@ let ltl_to_generalized_buchi formula =
     ) nodes in
     let start = 
       List.filter (
-        fun {id;incoming;cur;old;next} -> List.exists ((=) 0) incoming
+        fun {id;incoming;cur;old;next} -> List.exists ((=) (-1)) incoming
     ) nodes |> List.map node_id
     in
     let final = List.fold_left (fun acc x ->
@@ -81,7 +81,7 @@ let ltl_to_generalized_buchi formula =
     let transitions = List.map (
       fun {id;incoming;cur;old;next} -> 
         List.fold_left (
-          fun acc x -> if x=0 then acc else (x,id)::acc
+          fun acc x -> if x=(-1) then acc else (x,id)::acc
         ) [] incoming
     ) nodes |> List.flatten
     in
@@ -148,7 +148,7 @@ let ltl_to_generalized_buchi formula =
               expand {node with cur=(list_union node.cur (list_diff [f1;f2] node.old)); old=(list_union node.old [f])} node_set
         end 
   in
-  expand {id=new_id (); incoming=[0]; cur=[formula]; old=[]; next=[]} (H.create 101)
+  expand {id=new_id (); incoming=[(-1)]; cur=[formula]; old=[]; next=[]} (H.create 101)
   |> node_set_to_buchi
   |> normalize_buchi_ids
 
@@ -181,7 +181,7 @@ let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
   Printf.sprintf 
   "HOA: v1\nname: \"%s\"\nStates: %d\n%s\nacc-name: generalized-Buchi\nAcceptance: %d %s\nAP: %d %s\n--BODY--\n%s\n--END--\n"
   (ltl_to_string formula)
-  (List.map fst states |> List.fold_left max 0 |> ((+) 1))
+  (List.length states)
   starts
   finn
   (if finn=0 then "t" else ("("^fins^")"))

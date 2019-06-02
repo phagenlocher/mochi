@@ -69,6 +69,10 @@ let is_negated = function
   | UnOp (Not,_) -> true
   | _ -> false
 
+let is_next = function
+  | UnOp (Next,_) -> true
+  | _ -> false
+
 let negate_formula f = UnOp (Not, f)
 
 let rec is_negated_of f1 f2 = 
@@ -76,13 +80,61 @@ let rec is_negated_of f1 f2 =
 and nnf fx = 
   let (!!) = negate_formula
   in
-  let rec simp2 f = match f with 
+  let (===) a b = (nnf a) = (nnf b)
+  in
+  (* Boolean rewriting *)
+  let rec simp4 f = match f with
+    | BinOp (And, BinOp (Until, f1, f2), BinOp (Until, f3, f4))
+    | BinOp (And, BinOp (Until, f1, f2), BinOp (Wuntil, f3, f4))
+      when (f2 === f4) -> simp4 (BinOp (Until, BinOp (And, f1, f3), f2))
+    | BinOp (And, BinOp (Wuntil, f1, f2), BinOp (Wuntil, f3, f4)) 
+      when (f2 === f4) -> simp4 (BinOp (Wuntil, BinOp (And, f1, f3), f2))
+    | BinOp (And, BinOp (Release, f1, f2), BinOp (Release, f3, f4))
+      when (f1 === f3) -> simp4 (BinOp (Release, f1, BinOp (And, f2, f4))) 
+    | BinOp (And, BinOp (Release, f1, f2), BinOp (Srelease, f3, f4))
+      when (f1 === f3) -> simp4 (BinOp (Srelease, f1, BinOp (And, f2, f4))) 
+    | BinOp (And, BinOp (Srelease, f1, f2), BinOp (Srelease, f3, f4))
+      when (f1 === f3) -> simp4 (BinOp (Srelease, f1, BinOp (And, f2, f4))) 
+    | BinOp (Or, BinOp (Until, f1, f2), BinOp (Until, f3, f4)) 
+      when (f1 === f3) -> simp4 (BinOp (Until, f1, BinOp (Or, f2, f4)))
+    | BinOp (Or, BinOp (Until, f1, f2), BinOp (Wuntil, f3, f4)) 
+      when (f1 === f3) -> simp4 (BinOp (Wuntil, f1, BinOp (Or, f2, f4)))
+    | BinOp (Or, BinOp (Wuntil, f1, f2), BinOp (Wuntil, f3, f4)) 
+      when (f1 === f3) -> simp4 (BinOp (Wuntil, f1, BinOp (Or, f1, f4)))
+    | BinOp (Or, BinOp (Release, f1, f2), BinOp (Release, f3, f4)) 
+      when (f2 === f4) -> simp4 (BinOp (Release, BinOp (Or, f1, f3), f2))
+    | BinOp (Or, BinOp (Release, f1, f2), BinOp (Srelease, f3, f4)) 
+      when (f2 === f4) -> simp4 (BinOp (Release, BinOp (Or, f1, f3), f3))
+    | BinOp (Or, BinOp (Srelease, f1, f2), BinOp (Srelease, f3, f4)) 
+      when (f2 === f4) -> simp4 (BinOp (Srelease, BinOp (Or, f1, f3), f3))
+    (* Pass to simp3 *)
+    | x -> x
+  in
+  (* Rewriting *)
+  let rec simp3 f = match simp4 f with
+    | BinOp (Wuntil, f, Bool true) -> simp3 (UnOp (Globally, simp3 f))
+    | BinOp (Srelease, f, Bool true) -> simp3 (UnOp (Finally, simp3 f))
+    | BinOp (op, (UnOp (Next, f1)), (UnOp (Next, f2))) -> simp3 (UnOp (Next, simp3 (BinOp (op, f1, f2))))
+    | BinOp (biop, f1, UnOp (unop, f2)) 
+        when  (((biop = Until || biop = Wuntil) && unop = Globally) ||
+              ((biop = Release || biop = Srelease) && unop = Finally))
+              && (f1 === f2) ->
+                simp3 (UnOp (unop, simp3 f1))
+    (* Pass to simp2 *)
+    | x -> x 
+  in
+  (* Basic Simps *)
+  let rec simp2 f = match simp3 f with 
     (* Next *)
     | UnOp (Next, (UnOp (Finally, (UnOp (Globally, f))))) -> simp2 (UnOp (Finally, (UnOp (Globally, f))))
     | UnOp (Next, (UnOp (Globally, (UnOp (Finally, f))))) -> simp2 (UnOp (Globally, (UnOp (Finally, f))))
     (* Globally & Finally *)
     | UnOp (Globally, (UnOp (Finally, (UnOp (Globally, f))))) -> simp2 (UnOp (Finally, (UnOp (Globally, f))))
     | UnOp (Finally, (UnOp (Globally, (UnOp (Finally, f))))) -> simp2 (UnOp (Globally, (UnOp (Finally, f))))
+    | UnOp (Globally, (BinOp (Release, _, f))) -> simp2 (UnOp (Globally, simp2 f))
+    | UnOp (Finally, (BinOp (Until, _, f))) -> simp2 (UnOp (Finally, simp2 f))
+    | UnOp (Globally, (BinOp (Wuntil, f1, f2))) -> simp2 (UnOp (Globally, (BinOp (Or, simp2 f1, simp2 f2))))
+    | UnOp (Finally, (BinOp (Srelease, f1, f2))) -> simp2 (UnOp (Finally, (BinOp (And, simp2 f1, simp2 f2))))
     (* Pass to simp *)
     | x -> x
   in

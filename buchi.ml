@@ -104,7 +104,8 @@ let ltl_to_generalized_buchi formula =
     | BinOp (Or, _, _) -> []
   in
   let is_inconsistent node = 
-    List.exists (fun x -> List.exists (Ltl.is_negated_of x) node.cur) node.cur
+    (* List.exists (fun x -> List.exists (Ltl.is_negated_of x) node.cur) node.cur
+     *) false
   in
   let rec expand node node_set = 
     if is_inconsistent node then 

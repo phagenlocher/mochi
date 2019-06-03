@@ -77,10 +77,20 @@ let negate_formula f = UnOp (Not, f)
 
 let rec is_negated_of f1 f2 = 
   (nnf (negate_formula f1) = nnf f2) || (nnf f1 = nnf (negate_formula f2))
+and ltl_eq a b = 
+  (Debug.print ((ltl_to_string a)^" EQ? "^(ltl_to_string b)));
+  let res = match ((nnf a), (nnf b)) with (* fix this *)
+  | UnOp (op1, f), UnOp (op2, g) -> (op1=op2) && (ltl_eq f g)
+  | BinOp (And, f1, f2), BinOp (And, g1, g2)
+  | BinOp (Or, f1, f2), BinOp (Or, g1, g2) -> (ltl_eq f1 g1 && ltl_eq f2 g2) || (ltl_eq f1 g2 && ltl_eq f2 g1)
+  | BinOp (op1, f1, f2), BinOp (op2, g1, g2) -> (op1=op2) && (ltl_eq f1 g1 && ltl_eq f2 g2)
+  | x,y -> x=y
+  in
+  (Debug.print ("EQ = "^(string_of_bool res))); res
 and nnf fx = 
   let (!!) = negate_formula
   in
-  let (===) a b = (nnf a) = (nnf b)
+  let (===) a b = ltl_eq a b
   in
   (* Boolean rewriting *)
   let rec simp4 f = match f with
@@ -146,22 +156,30 @@ and nnf fx =
     | BinOp (Or, Bool true, f) | BinOp (Or, f, Bool true) -> Bool true
     | BinOp (And, f1, f2) when (is_negated_of f1 f2) -> Bool false
     | BinOp (Or, f1, f2) when (is_negated_of f1 f2) -> Bool true
+    | BinOp (Or, f1, f2) when (f1 === f2) -> simp f1
+    | BinOp (And, f1, f2) when (f1 === f2) -> simp f1
     | BinOp (Imp, Bool false, f) -> Bool true
     (* Until *)
     | BinOp (Until, f, Bool true) -> Bool true
     | BinOp (Until, f, Bool false) -> Bool false
     | BinOp (Until, Bool false, f) -> simp f
+    | BinOp (Until, f1, f2) when (f1 === f2) -> simp f1
     (* Release *)
     | BinOp (Release, f, Bool true) -> Bool true
     | BinOp (Release, f, Bool false) -> Bool false
+    | BinOp (Release, f1, f2) when (f1 === f2) -> simp f1
     (* Implications *)
     | BinOp (Imp, f1, f2) -> simp (BinOp (Or, simp (!!f1), simp f2))
+    | BinOp (Biimp, f1, f2) when (f1 === f2) -> Bool true
     | BinOp (Biimp, f1, f2) -> simp (BinOp (And, simp (BinOp (Imp, f1, f2)), simp (BinOp (Imp, f2, f1))))
     (* XOR *)
+    | BinOp (Xor, f1, f2) when (f1 === f2) -> Bool false
     | BinOp (Xor, f1, f2) -> simp (BinOp (Or, (BinOp (And, simp (!!f1), simp f2)), (BinOp (And, simp f1, simp (!!f2)))))
     (* Weak until *)
+    | BinOp (Wuntil, f1, f2) when (f1 === f2) -> simp f1
     | BinOp (Wuntil, f1, f2) -> simp (BinOp (Until, simp f1, simp (BinOp (Or, simp f2, simp (UnOp (Globally, simp f1))))))
     (* Strong release *)
+    | BinOp (Srelease, f1, f2) when (f1 === f2) -> simp f1
     | BinOp (Srelease, f1, f2) -> simp (BinOp (And, simp (BinOp (Release, simp f1, simp f2)), simp (UnOp (Finally, simp f1))))
     (* Globally and Finally  *)
     | UnOp (Globally, UnOp (Globally, f)) -> simp (UnOp (Globally, simp f))
@@ -169,7 +187,7 @@ and nnf fx =
     | UnOp (Finally, UnOp (Next, f)) -> simp (UnOp (Next, UnOp (Finally, simp f)))
     | UnOp (Globally, UnOp (Next, f)) -> simp (UnOp (Next, UnOp (Globally, simp f)))
     | UnOp (Globally, f) -> BinOp (Release, Bool false, simp f)
-    | UnOp (Finally, f) -> BinOp (Until, Bool true, simp f)
+    | UnOp (Finally, f) -> BinOp (Until, Bool true, simp f) 
     (* Nothing to simplify *)
     | UnOp (op, f) -> UnOp (op, simp f)
     | BinOp (op, f1, f2) -> BinOp (op, simp f1, simp f2)

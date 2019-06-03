@@ -1,15 +1,15 @@
-let remove_duplicates xs =
+let remove_duplicates ?f:(f=(=)) xs =
   List.fold_left 
   (
     fun acc x -> 
-      if List.exists (fun z -> x=z) acc then acc else x::acc
+      if List.exists (fun z -> (f x z)) acc then acc else x::acc
   ) [] xs
 
 (* Set like union on lists *)
-let rec list_union a = function
+let rec list_union ?f:(f=(=)) a = function
   | [] -> a
   | x::xs ->
-      if List.exists ((=) x) a then 
+      if List.exists (f x) a then 
         list_union a xs
       else
         list_union (x::a) xs
@@ -18,8 +18,18 @@ let rec list_union a = function
 let list_remove p = List.filter (fun x -> not (p x))
 
 (* Set like difference for lists *)
-let list_diff a b =
-  list_remove (fun x -> List.exists ((=) x) b) a
+let list_diff ?f:(f=(=)) a b =
+  list_remove (fun x -> List.exists (f x) b) a
+
+(* Set like equality *)
+let rec list_eq ?f:(f=(=)) a b = match a,b with
+  | [],[] -> true
+  | x::xs, [] | [], x::xs -> false
+  | x::xs, ys ->
+      if List.exists (f x) ys then
+        list_eq ~f:(f) xs (list_remove (fun y -> f x y) ys)
+      else
+        false
 
 let list_to_string f l =
     let res = List.fold_left (fun acc x -> acc^(f x)^";") "" l

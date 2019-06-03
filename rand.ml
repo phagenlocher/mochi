@@ -7,16 +7,14 @@ let rand_ltl vars depth =
   let aps = List.init vars (fun i -> "p"^(string_of_int i)) in
   let rec aux n =
     if n <= 0 then 
-      match Random.int 4 with
-      | 0 -> Var (rand_choice aps)
-      | _ -> UnOp (rand_choice [Not; Finally; Globally; Next], Var (rand_choice aps))
+      Var (rand_choice aps)
     else
-      match Random.int 7 with
+      match Random.int 4 with
       | 0 -> Var (rand_choice aps)
       | 1 -> UnOp (rand_choice [Not; Finally; Globally; Next], aux (n-1))
       | _ -> 
           BinOp (
-            rand_choice [And;Or;Biimp;Imp;Xor;Until;Wuntil;Release;Srelease],
+            rand_choice [And;Or;Until;Wuntil;Release;Srelease],
             aux (n-1),
             aux (n-1)
           )

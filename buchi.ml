@@ -136,6 +136,24 @@ let ltl_to_generalized_buchi formula =
                 expand {node with old=(list_union node.old [f])} node_set
           | UnOp (Next, x) ->
               expand {node with old=list_union node.old [f]; next=list_union node.next [x]} node_set
+          | UnOp (Globally, x) ->
+              let n1 = {
+                id=new_id (); 
+                incoming=node.incoming; 
+                cur=(list_union node.cur (list_diff [x] node.old));
+                old=(list_union node.old [f]);
+                next=(list_union node.next [f])
+              } 
+              in
+              let n2 = {
+                id=new_id (); 
+                incoming=node.incoming; 
+                cur=(list_union node.cur (list_diff [Bool false;x] node.old));
+                old=(list_union node.old [f]);
+                next=node.next
+              } 
+              in
+              expand n2 (expand n1 node_set)
           | BinOp (Until, f1, f2) | BinOp (Release, f1, f2) | BinOp (Or, f1, f2) ->
               let n1 = {
                 id=new_id (); 

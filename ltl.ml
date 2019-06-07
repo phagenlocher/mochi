@@ -187,7 +187,7 @@ and nnf fx =
     | UnOp (Finally, UnOp (Next, f)) -> simp (UnOp (Next, UnOp (Finally, simp f)))
     | UnOp (Globally, UnOp (Next, f)) -> simp (UnOp (Next, UnOp (Globally, simp f)))
     (*| UnOp (Globally, f) -> BinOp (Release, Bool false, simp f)*)
-    | UnOp (Finally, f) -> BinOp (Until, Bool true, simp f) 
+    (* | UnOp (Finally, f) -> BinOp (Until, Bool true, simp f) *)
     (* Nothing to simplify *)
     | UnOp (op, f) -> UnOp (op, simp f)
     | BinOp (op, f1, f2) -> BinOp (op, simp f1, simp f2)

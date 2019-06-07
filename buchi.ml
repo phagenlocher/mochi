@@ -69,10 +69,10 @@ let ltl_to_generalized_buchi formula =
     in
     let final = List.fold_left (fun acc x ->
       match x with
-      | BinOp (Until, f1, f2) -> 
+      | BinOp (Until, _, f) | UnOp (Finally, f) -> 
           let fin = List.filter (
             fun {id;incoming;cur;old;next} -> 
-              (not (List.exists ((=) x) old)) || (List.exists ((=) f2) old)
+              (not (List.exists ((=) x) old)) || (List.exists ((=) f) old)
           ) nodes in (List.map node_id fin)::acc
       | _ -> acc
     ) [] (Ltl.subformulae formula)
@@ -136,6 +136,24 @@ let ltl_to_generalized_buchi formula =
                 expand {node with old=(list_union node.old [f])} node_set
           | UnOp (Next, x) ->
               expand {node with old=list_union node.old [f]; next=list_union node.next [x]} node_set
+          | UnOp (Finally, x) ->
+              let n1 = {
+                id=new_id (); 
+                incoming=node.incoming; 
+                cur=(list_union node.cur (list_diff [Bool true] node.old));
+                old=(list_union node.old [f]);
+                next=(list_union node.next [f])
+              } 
+              in
+              let n2 = {
+                id=new_id (); 
+                incoming=node.incoming; 
+                cur=(list_union node.cur (list_diff [x] node.old));
+                old=(list_union node.old [f]);
+                next=node.next
+              } 
+              in
+              expand n2 (expand n1 node_set)
           | UnOp (Globally, x) ->
               let n1 = {
                 id=new_id (); 

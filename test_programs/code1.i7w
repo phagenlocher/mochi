@@ -1,0 +1,56 @@
+decl x[3],y[2],z[2];
+
+x := 0;
+y := 0;
+z := 0;
+
+beginprocess
+	while not (z = 1) do
+	{
+		await z = 1;
+	}
+	if not (x = 2) do
+	{
+		x := x + 1;
+	}
+	else
+	{
+		skip;
+	}
+	_end1: skip;
+endprocess
+
+beginprocess
+	while not (z = 1) do
+	{
+		await z = 1;
+	}
+	if not (x = 2) do
+	{
+		x := x + 1;
+	}
+	else
+	{
+		skip;
+	}
+	_end2: skip;
+endprocess
+
+beginprocess
+	y := y + 1;
+	if not (x = 2) do
+	{
+		x := x + 1;
+		_miny: y := y - 1;
+	}
+	else
+	{
+		skip;
+	}
+	_end3: z := 1;
+endprocess
+
+_ap0: 1 <= x;
+_ap1: 2 <= x;
+_ap2: z = 1;
+_ap3: y = 0;

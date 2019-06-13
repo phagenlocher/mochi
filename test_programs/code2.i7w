@@ -1,0 +1,23 @@
+decl x[3];
+
+x := 2;
+
+beginprocess
+	_awa1: await x = 2;
+	_min1: x := x - 1;
+	_end1: skip;
+endprocess
+
+beginprocess
+	_awa2: await x = 1;
+	_min2: x := x - 1;
+	while x = 0 do
+	{
+		skip;
+	}
+	_end2: skip;
+endprocess
+
+_ap0: x = 0;
+_ap1: 1 <= x;
+_ap2: x = 2;

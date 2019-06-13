@@ -20,20 +20,28 @@ main:
         | expression EOF                {$1}
         ;
 expression:
+        | or_exp                       {$1}
+        ;
+or_exp:
+        | and_exp OR or_exp             {BinOp (Or,$1,$3)}
+        | and_exp                       {$1}
+        ;
+and_exp:
+        | bin_exp AND and_exp           {BinOp (And,$1,$3)}
         | bin_exp                       {$1}
-        | un_exp                        {$1}
-        | LPAREN expression RPAREN      {$2}
         ;
 bin_exp:
-        | expression binop expression   {BinOp ($2,$1,$3)} 
+        | un_exp binop bin_exp         {BinOp ($2,$1,$3)} 
+        | un_exp                        {$1}
         ;
 un_exp:
-        | unop expression               {UnOp ($1,$2)}
+        | unop bin_exp                  {UnOp ($1,$2)}
         | atom                          {$1}
         ;
 atom:
         | bool                          {Bool ($1)}
         | VARIABLE                      {Var ($1)}
+        | LPAREN expression RPAREN      {$2}
         ;
 unop:
         | NOT                           {Not}
@@ -42,8 +50,6 @@ unop:
         | NEXT                          {Next}
         ;
 binop:
-        | AND                           {And}
-        | OR                            {Or}
         | BIIMP                         {Biimp}
         | IMP                           {Imp}
         | XOR                           {Xor}

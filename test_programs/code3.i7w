@@ -6,7 +6,7 @@ flag1 := 0;
 flag2 := 0;
 
 beginprocess
-	while not (x = 99)
+	while not (x = 99) do
 	{
 		x := x + 1;
 	}

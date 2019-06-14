@@ -9,7 +9,7 @@ beginprocess
 	{
 		await z = 1;
 	}
-	if not (x = 2) do
+	if not (x = 2) then
 	{
 		x := x + 1;
 	}
@@ -25,7 +25,7 @@ beginprocess
 	{
 		await z = 1;
 	}
-	if not (x = 2) do
+	if not (x = 2) then
 	{
 		x := x + 1;
 	}
@@ -38,7 +38,7 @@ endprocess
 
 beginprocess
 	y := y + 1;
-	if not (x = 2) do
+	if not (x = 2) then
 	{
 		x := x + 1;
 		_miny: y := y - 1;

@@ -3,14 +3,18 @@ open Util
 
 let interactive_mode = ref false
 let ltl_mode = ref false
+let buchi_mode = ref false
 let formula = ref ""
+let filename = ref ""
 
 let parse_args () =
   Arg.parse [
     "-i", Unit (fun () -> interactive_mode := true), "activate interactive mode";
     "-f", String (fun x -> formula := x), "specify the LTL formula";
+    "-p", String (fun x -> filename := x), "specify i7w-file";
     "-d", Unit (fun () -> Util.Debug.init true), "activate debug output";
     "-l", Unit (fun () -> ltl_mode := true), "activate LTL mode (no Büchi translation)";
+    "-b", Unit (fun () -> buchi_mode := true), "activate Büchi mode (output HOA)";
     "-r", Int (fun i -> 
       print_endline (ltl_to_string (Rand.rand_ltl 10 i)); exit 0
     ), "print a random ltl formula with maximal depth of the given argument"
@@ -28,10 +32,12 @@ let read_file filename =
     | End_of_file -> close_in chan; List.rev lines
     | _ -> close_in_noerr chan; []
   in
-  String.concat " " (aux [])
+  String.concat "\n" (aux [])
 
 let parse_file filename =
-  read_file filename |> parse_ltl
+  let fc = read_file filename 
+  in Debug.print ("Read file:\n"^fc);
+  Wlang.parse_wlang fc
 
 let rec interactive_loop () =
   print_endline ("Input:");
@@ -52,9 +58,11 @@ let main () =
     print_endline "No formula specified! Please do so with -f!"
   else if !ltl_mode then
     print_endline (ltl_to_string (nnf (unravel (parse_ltl !formula))))
-  else
+  else if !buchi_mode then
     let b = Buchi.ltl_to_generalized_buchi (nnf (unravel (parse_ltl !formula)))
     in print_endline (Buchi.hoa_of_generalized_buchi b)
+  else 
+    (parse_file !filename |> unravel |> wlang_to_string |> print_endline)
 
 let _ =
   parse_args ();

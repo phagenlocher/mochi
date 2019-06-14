@@ -111,3 +111,92 @@ let rec ltl_to_string = function
         | UnOp (op,f) -> (unop_to_string op)^("("^(ltl_to_string f)^")")
         | BinOp (op,x1,x2) -> "("^(ltl_to_string x1)^")"^(binop_to_string op)^"("^(ltl_to_string x2)^")"
         | Var x -> x
+
+type wlang = wdecl list * winit list * wproc list * wap list
+and wdecl = string * int
+and winit = string * wexp
+and wproc = wlstmt list
+and wap = string * wbool
+and wbool = 
+        | WBool of bool
+        | WNot of wbool
+        | WAnd of wbool * wbool
+        | WEq of wexp * wexp
+        | WLeq of wexp * wexp
+and wexp = 
+        | WInt of int
+        | WId of string
+        | WBinOp of wbinop * wexp * wexp
+and wbinop =
+        | WMul
+        | WPlus
+        | WMinus
+and wlstmt = string * wstmt
+and wstmt = 
+        | WAssign of string * wexp
+        | WSkip
+        | WIf of wbool * wstmt * wstmt
+        | WWhile of wbool * wstmt
+        | WAwait of wbool
+        | WAssert of wbool
+        | WPrint
+        | WWrite
+        | WBlock of wlstmt list
+
+let wdecl_to_string (n,i) = n^"["^(string_of_int i)^"]"
+
+let wbinop_to_string = function
+  | WMul -> "*"
+  | WPlus -> "+"
+  | WMinus -> "-"
+
+let rec wexp_to_string = function
+  | WInt i -> string_of_int i
+  | WId s -> s
+  | WBinOp (op, e1, e2) -> (wexp_to_string e1)^(wbinop_to_string op)^(wexp_to_string e2)
+
+let winit_to_string (n,e) = n^" := "^(wexp_to_string e)
+
+let rec wbool_to_string = function
+  | WBool x -> string_of_bool x
+  | WNot x -> "not "^(wbool_to_string x)
+  | WAnd (x1,x2) -> (wbool_to_string x1)^" and "^(wbool_to_string x2)
+  | WEq (x1,x2) -> (wexp_to_string x1)^" = "^(wexp_to_string x2)
+  | WLeq (x1,x2) -> (wexp_to_string x1)^" <= "^(wexp_to_string x2)
+
+let rec wstmt_to_string = function
+  | WAssign (n,e) -> n^" := "^(wexp_to_string e)
+  | WIf (b,s1,s2) -> "if "^(wbool_to_string b)^" then\n"^(wstmt_to_string s1)^"\nelse\n"^(wstmt_to_string s2)
+  | WWhile (b,s) -> "while "^(wbool_to_string b)^" do\n"^(wstmt_to_string s)
+  | WAwait b -> "await "^(wbool_to_string b)
+  | WAssert b -> "assert "^(wbool_to_string b)
+  | WPrint -> "print"
+  | WSkip -> "skip"
+  | WWrite -> "write"
+  | WBlock sl -> 
+      let c = List.map (fun x -> "\t"^(wlstmt_to_string x)) sl
+      in "{\n"^(String.concat "\n" c)^"\n}"
+and wlstmt_to_string (l,s) = 
+  if l = "" then wstmt_to_string s else l^": "^(wstmt_to_string s)
+
+let wproc_to_string sl = 
+  let c = List.map (fun x -> (wlstmt_to_string x)) sl
+  in "beginprocess\n"^(String.concat "\n" c)^"\nendprocess"
+
+let wap_to_string (n,b) = n^": "^(wbool_to_string b)
+
+let rec wlang_to_string (decll, initl, procl, wapl) = 
+  let d = List.map wdecl_to_string decll |> String.concat "\n\t"
+  in
+  let i = List.map winit_to_string initl |> String.concat "\n\t"
+  in
+  let p = List.map wproc_to_string procl |> String.concat "\n"
+  in
+  let a = List.map wap_to_string wapl |> String.concat "\n\t"
+  in
+  Printf.sprintf
+  "Declarations:\n\t%s\nInitialization:\n\t%s\nProcs:\n%s\nAPs:\n\t%s"
+  d
+  i
+  p
+  a

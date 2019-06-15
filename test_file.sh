@@ -1,6 +1,6 @@
 if [ -z "$1" ]
 then
-	echo "Usage: ./test.sh <file to test>"
+	echo "Usage: ./test_file.sh <file to test>"
 	exit 1
 fi
 

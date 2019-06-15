@@ -1,6 +1,6 @@
 if [ -z "$1" ]
 then
-	echo "Usage: ./test.sh <number of recursive ltl depth>"
+	echo "Usage: ./test_inf.sh <number of recursive ltl depth>"
 	exit 1
 fi
 

@@ -1,5 +1,7 @@
 %{
   let debug x = Util.Debug.print ("WL-Parser: "^x) 
+  let counter = ref 0
+  let new_id () = incr counter; !counter
 %}
 
 %token EQ LEQ
@@ -49,7 +51,7 @@ procl:
         | EMPTY                                     {debug "procl EMPTY"; []}
         ;
 process:
-        | BEGIN seqstatement END                    {$2}
+        | BEGIN seqstatement END                    {new_id (), $2}
         ;
 seqstatement:
         | labelstatement seqstatement               {$1::$2}
@@ -63,8 +65,8 @@ statement:
         | ID ASSIGN expression SMCLN                {WAssign ($1, $3)}
         | SKIP SMCLN                                {WSkip}
         | IF boolexpression THEN statement ELSE statement
-                                                    {WIf ($2,$4,$6)}
-        | WHILE boolexpression DO statement         {WWhile ($2,$4)}
+                                                    {WIf ($2,("",$4),("",$6))}
+        | WHILE boolexpression DO statement         {WWhile ($2,("",$4))}
         | AWAIT boolexpression SMCLN                {WAwait $2}
         | ASSERT boolexpression SMCLN               {WAssert $2}
         | PRINT TEXT SMCLN                          {WPrint}

@@ -65,6 +65,8 @@ module Debug = struct
 
     let print x = if !debug then Printf.fprintf stderr "%s\n" x
 
+    let error x = Printf.fprintf stderr "%s\n" x
+
 end
 
 type ltl =
@@ -115,7 +117,7 @@ let rec ltl_to_string = function
 type wlang = wdecl list * winit list * wproc list * wap list
 and wdecl = string * int
 and winit = string * wexp
-and wproc = wlstmt list
+and wproc = int * (wlstmt list)
 and wap = string * wbool
 and wbool = 
         | WBool of bool
@@ -135,8 +137,8 @@ and wlstmt = string * wstmt
 and wstmt = 
         | WAssign of string * wexp
         | WSkip
-        | WIf of wbool * wstmt * wstmt
-        | WWhile of wbool * wstmt
+        | WIf of wbool * wlstmt * wlstmt
+        | WWhile of wbool * wlstmt
         | WAwait of wbool
         | WAssert of wbool
         | WPrint
@@ -166,8 +168,8 @@ let rec wbool_to_string = function
 
 let rec wstmt_to_string = function
   | WAssign (n,e) -> n^" := "^(wexp_to_string e)
-  | WIf (b,s1,s2) -> "if "^(wbool_to_string b)^" then\n"^(wstmt_to_string s1)^"\nelse\n"^(wstmt_to_string s2)
-  | WWhile (b,s) -> "while "^(wbool_to_string b)^" do\n"^(wstmt_to_string s)
+  | WIf (b,s1,s2) -> "if "^(wbool_to_string b)^" then\n"^(wlstmt_to_string s1)^"\nelse\n"^(wlstmt_to_string s2)
+  | WWhile (b,s) -> "while "^(wbool_to_string b)^" do\n"^(wlstmt_to_string s)
   | WAwait b -> "await "^(wbool_to_string b)
   | WAssert b -> "assert "^(wbool_to_string b)
   | WPrint -> "print"
@@ -179,9 +181,9 @@ let rec wstmt_to_string = function
 and wlstmt_to_string (l,s) = 
   if l = "" then wstmt_to_string s else l^": "^(wstmt_to_string s)
 
-let wproc_to_string sl = 
+let wproc_to_string (i,sl) = 
   let c = List.map (fun x -> (wlstmt_to_string x)) sl
-  in "beginprocess\n"^(String.concat "\n" c)^"\nendprocess"
+  in "beginprocess("^(string_of_int i)^")\n"^(String.concat "\n" c)^"\nendprocess\n"
 
 let wap_to_string (n,b) = n^": "^(wbool_to_string b)
 
@@ -195,8 +197,4 @@ let rec wlang_to_string (decll, initl, procl, wapl) =
   let a = List.map wap_to_string wapl |> String.concat "\n\t"
   in
   Printf.sprintf
-  "Declarations:\n\t%s\nInitialization:\n\t%s\nProcs:\n%s\nAPs:\n\t%s"
-  d
-  i
-  p
-  a
+  "Declarations:\n\t%s\nInitialization:\n\t%s\n\n%s\nAPs:\n\t%s" d i p a

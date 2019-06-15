@@ -1,7 +1,6 @@
 open Ltl
 open Util
 
-let interactive_mode = ref false
 let ltl_mode = ref false
 let buchi_mode = ref false
 let formula = ref ""
@@ -9,7 +8,6 @@ let filename = ref ""
 
 let parse_args () =
   Arg.parse [
-    "-i", Unit (fun () -> interactive_mode := true), "activate interactive mode";
     "-f", String (fun x -> formula := x), "specify the LTL formula";
     "-p", String (fun x -> filename := x), "specify i7w-file";
     "-d", Unit (fun () -> Util.Debug.init true), "activate debug output";
@@ -37,23 +35,19 @@ let read_file filename =
 let parse_file filename =
   let fc = read_file filename 
   in Debug.print ("Read file:\n"^fc);
-  Wlang.parse_wlang fc
+  Wlang.parse_wlang fc |> unravel |> Wlang.label_statements
 
-let rec interactive_loop () =
-  print_endline ("Input:");
-  print_string ("   ");
-  let formula = unravel (parse_ltl (read_line ())) in
-  print_endline ("Formula:");
-  print_endline ("   " ^ (ltl_to_string formula));
-  print_endline ("NNF:");
-  let nnff = nnf formula in
-  print_endline ("   " ^ (ltl_to_string (nnff)));
-  print_endline ("");
-  let b = Buchi.ltl_to_generalized_buchi nnff in
-  print_endline (Buchi.hoa_of_generalized_buchi b);
-  interactive_loop ()
+let warn_duplicate_labels wl = match Wlang.check_labels wl with
+  | None -> ()
+  | Some l -> Debug.error ("Duplicate label found: "^l)
 
 let main () =
+  let wl = parse_file !filename
+  in
+  warn_duplicate_labels wl;
+  print_endline (wlang_to_string wl)
+
+let pre_main () =
   if !formula = "" then
     print_endline "No formula specified! Please do so with -f!"
   else if !ltl_mode then
@@ -62,13 +56,8 @@ let main () =
     let b = Buchi.ltl_to_generalized_buchi (nnf (unravel (parse_ltl !formula)))
     in print_endline (Buchi.hoa_of_generalized_buchi b)
   else 
-    (parse_file !filename |> unravel |> wlang_to_string |> print_endline)
+    main ()
 
 let _ =
   parse_args ();
-  begin
-    if !interactive_mode then
-      interactive_loop ()
-    else
-      main ()
-  end
+  pre_main ()

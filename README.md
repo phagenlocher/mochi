@@ -5,10 +5,10 @@
 * LTL to NNF
 * NNF to GBA based on algorithm by Gerth et al.
 * GBA to HOA
+* Whilelang Parsing
 
 ### Planned
 * Better LTL simplifications / rewriting
-* Adding G and F to the GBA translation
 * Ongoing bugfixing ;)
 
 ### Known Bugs
@@ -28,3 +28,6 @@ _test\_one.sh_ runs ltlcross with mochi and ltl2tgba with one specified formula.
 
 ```Usage: ./test_one.sh <the LTL formula to test>```
 
+_test\_file.sh_ runs ltlcross with mochi and ltl2tgba on a file of LTL formulas.
+
+```Usage: ./test_file.sh <the file with LTL formulas to test>```

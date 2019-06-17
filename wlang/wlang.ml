@@ -52,7 +52,6 @@ let label_statements (decll, initl, procl, apl) =
   let label_proc (pid,stmts) =
     let counter = ref 0 in
     let new_label () = 
-      incr counter;
       Printf.sprintf "_%d:%d" pid !counter
     in
     let rec handle_stmt = function
@@ -68,6 +67,7 @@ let label_statements (decll, initl, procl, apl) =
     and aux = function
       | [] -> []
       | (l,s)::xs -> 
+          incr counter; 
           if l <> "" then 
             let s = handle_stmt s in
             let nwls = (l,s) in

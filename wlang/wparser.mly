@@ -23,18 +23,16 @@
 main:
         | decll initl procl aps EOF                 {debug "Done!"; $1,$2,$3,$4}
         ;
-decll:
+decll:                                              {debug "decll EMPTY"; []}
         | DECL declarations SMCLN                   {$2}
-        | EMPTY                                     {debug "decll EMPTY"; []}
         ;
 declarations:
         | ID LBRACK INT RBRACK COMMA declarations   {($1,$3)::$6}
         | ID LBRACK INT RBRACK                      {[$1,$3]}
         ;
-initl:
+initl:                                              {debug "initl EMPTY"; []}
         | ID ASSIGN expression SMCLN initl          {($1,$3)::$5}
         | ID ASSIGN expression SMCLN                {[$1,$3]}
-        | EMPTY                                     {debug "initl EMPTY"; []}
         ;
 expression:
         | INT                                       {WInt $1}
@@ -44,11 +42,10 @@ expression:
         | expression MINUS expression               {WBinOp (WMinus, $1, $3)}
         | LPAREN expression RPAREN                  {$2}
         ;
-procl:
+procl:                                              {debug "procl EMPTY"; []}
         | process SMCLN procl                       {$1::$3}
         | process procl                             {$1::$2}
         | process                                   {[$1]}
-        | EMPTY                                     {debug "procl EMPTY"; []}
         ;
 process:
         | BEGIN seqstatement END                    {new_id (), $2}
@@ -58,15 +55,15 @@ seqstatement:
         | labelstatement                            {[$1]}
         ;
 labelstatement:
-        | LABEL LABELSEP statement                  {$1, $3}
-        | statement                                 {"", $1}
+        | LABEL LABELSEP statement                  {$1, 0, $3}
+        | statement                                 {"", 0, $1}
         ;
 statement:
         | ID ASSIGN expression SMCLN                {WAssign ($1, $3)}
         | SKIP SMCLN                                {WSkip}
         | IF boolexpression THEN statement ELSE statement
-                                                    {WIf ($2,("",$4),("",$6))}
-        | WHILE boolexpression DO statement         {WWhile ($2,("",$4))}
+                                                    {WIf ($2,("",0,$4),("",0,$6))}
+        | WHILE boolexpression DO statement         {WWhile ($2,("",0,$4))}
         | AWAIT boolexpression SMCLN                {WAwait $2}
         | ASSERT boolexpression SMCLN               {WAssert $2}
         | PRINT TEXT SMCLN                          {WPrint}
@@ -82,10 +79,9 @@ boolexpression:
         | boolexpression AND boolexpression         {WAnd ($1,$3)}
         | LPAREN boolexpression RPAREN              {$2}
         ;
-aps:
+aps:                                                {debug "aps EMPTY"; []}
         | ap aps                                    {$1::$2}
         | ap                                        {[$1]}
-        | EMPTY                                     {debug "aps EMPTY"; []}
         ;
 ap:
         | LABEL LABELSEP boolexpression SMCLN       {$1,$3} 

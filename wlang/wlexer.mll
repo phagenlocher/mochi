@@ -43,6 +43,5 @@ rule token = parse
   | '_'(['a'-'z''A'-'Z''0'-'9']*) as str 
                                 { debug str; LABEL (str) }
   | '"'(_*)'"' as str           { debug str; TEXT (str) }
-  | ""                          { debug "EMPTY"; EMPTY }
   | eof                         { EOF }
   

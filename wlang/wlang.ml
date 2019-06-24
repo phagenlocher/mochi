@@ -295,7 +295,11 @@ let explore_everything p =
     else 
       map := (x,y)::!map
   in
-  let news x = ns := x::!ns
+  let news x = 
+    if (List.exists ((=) x) !ns) || (List.exists (fun (a,b) -> a=x) !map) then 
+      () 
+    else 
+      ns := x::!ns
   in
   let rec aux s = match next_states s with
     | [] -> ()

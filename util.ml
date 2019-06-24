@@ -32,7 +32,7 @@ let rec list_eq ?f:(f=(=)) a b = match a,b with
         false
 
 let list_to_string f l =
-    let res = List.fold_left (fun acc x -> acc^(f x)^";") "" l
+    let res = List.fold_left (fun acc x -> acc^(f x)^"; ") "" l
     in "["^res^"]"
 
 (* List.find_opt for hashtables *)
@@ -55,6 +55,13 @@ let seq_to_list s =
   Seq.fold_left (fun acc x -> x::acc) [] s
   |> List.rev
 
+let tuple_to_string c1 c2 (a1,a2) = "("^(c1 a1)^","^(c2 a2)^")"
+
+let hashtbl_to_string ck cv ht = 
+  Seq.fold_left (
+    fun acc (k,v) -> acc^((ck k)^" -> "^(cv v))^"\n"
+  ) "" (Hashtbl.to_seq ht)
+
 module Debug = struct 
 
     let debug = ref false
@@ -63,9 +70,9 @@ module Debug = struct
 
     let in_debug_mode () = !debug
 
-    let print x = if !debug then Printf.fprintf stderr "%s\n" x
+    let print x = if !debug then Printf.fprintf stderr "%s\n" x; flush_all ()
 
-    let error x = Printf.fprintf stderr "%s\n" x
+    let error x = Printf.fprintf stderr "ERROR: %s\n" x; flush_all ()
 
 end
 
@@ -133,8 +140,9 @@ and wbinop =
         | WMul
         | WPlus
         | WMinus
-and wlstmt = string * wstmt
+and wlstmt = string * int * wstmt
 and wstmt = 
+        | WHalt (* Dummy for halting process *)
         | WAssign of string * wexp
         | WSkip
         | WIf of wbool * wlstmt * wlstmt
@@ -174,12 +182,13 @@ let rec wstmt_to_string = function
   | WAssert b -> "assert "^(wbool_to_string b)
   | WPrint -> "print"
   | WSkip -> "skip"
+  | WHalt -> "halt"
   | WWrite -> "write"
   | WBlock sl -> 
       let c = List.map (fun x -> "\t"^(wlstmt_to_string x)) sl
       in "{\n"^(String.concat "\n" c)^"\n}"
-and wlstmt_to_string (l,s) = 
-  if l = "" then wstmt_to_string s else l^": "^(wstmt_to_string s)
+and wlstmt_to_string (l,i,s) =
+  (string_of_int i)^" "^(if l = "" then wstmt_to_string s else l^": "^(wstmt_to_string s))
 
 let wproc_to_string (i,sl) = 
   let c = List.map (fun x -> (wlstmt_to_string x)) sl

@@ -4,4 +4,4 @@ then
 	exit 1
 fi
 
-ltlcross -F "$1" 'ltl2tgba -f %f >%O' './mochi.native -f %f >%O'
+ltlcross -F "$1" 'ltl2tgba -f %f >%O' './mochi.native -b -f %f >%O'

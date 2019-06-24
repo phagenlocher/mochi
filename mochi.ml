@@ -32,20 +32,34 @@ let read_file filename =
   in
   String.concat "\n" (aux [])
 
-let parse_file filename =
-  let fc = read_file filename 
-  in Debug.print ("Read file:\n"^fc);
-  Wlang.parse_wlang fc |> unravel |> Wlang.label_statements
-
 let warn_duplicate_labels wl = match Wlang.check_labels wl with
   | None -> ()
   | Some l -> Debug.error ("Duplicate label found: "^l)
 
-let main () =
-  let wl = parse_file !filename
+let parse_file filename =
+  let fc = read_file filename 
   in
-  warn_duplicate_labels wl;
-  print_endline (wlang_to_string wl)
+  let proc = Wlang.parse_wlang fc |> unravel |> Wlang.label_statements 
+  in Debug.print ("\nLabeled code:\n"^(wlang_to_string proc));
+  Debug.print "Building next-map...";
+  Wlang.build_next_map proc; 
+  Debug.print (
+    hashtbl_to_string 
+    (tuple_to_string string_of_int string_of_int)
+    (list_to_string (tuple_to_string wbool_to_string (fun (_,i,_) -> string_of_int i)))
+    Wlang.next_map 
+  );
+  warn_duplicate_labels proc;
+  proc
+
+let main () =
+  let proc = parse_file !filename
+  in
+  Debug.print "Exploring...";
+  let kripke = Wlang.explore_everything proc
+  in
+  Debug.print "Exporting to dot...";
+  print_endline (Wlang.state_map_to_dot kripke)
 
 let pre_main () =
   if !formula = "" then

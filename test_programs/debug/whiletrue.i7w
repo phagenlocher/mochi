@@ -1,0 +1,7 @@
+beginprocess
+	while true do skip;
+endprocess
+
+beginprocess
+	while true do skip;
+endprocess

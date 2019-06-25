@@ -1,0 +1,17 @@
+decl x[2];
+
+x := 0;
+
+beginprocess
+	assert x = 0;
+	while true do skip;
+endprocess
+
+beginprocess
+	assert x = 1;
+endprocess
+
+beginprocess
+	assert x = 2;
+endprocess
+

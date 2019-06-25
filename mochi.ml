@@ -48,10 +48,12 @@ let parse_file filename =
   Debug.print "Building next-map...";
   Wlang.build_next_map proc; 
   Debug.print (
-    hashtbl_to_string 
-    (tuple_to_string string_of_int string_of_int)
-    (list_to_string (tuple_to_string wbool_to_string (fun (_,i,_) -> string_of_int i)))
-    Wlang.next_map 
+    List.fold_left (fun acc (a,b) -> acc^
+        ((tuple_to_string string_of_int string_of_int) a)^" -> "^
+        ((list_to_string (tuple_to_string wbool_to_string (fun (_,i,_) -> string_of_int i))) b)^"\n"
+    )
+    ""
+    (Hashtbl.to_seq Wlang.next_map |> seq_to_list |> List.sort (fun ((a,b),_) ((x,y),_) -> (a*10000000+b) - (x*10000000+y)))
   );
   warn_duplicate_labels proc;
   proc

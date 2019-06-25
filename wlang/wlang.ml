@@ -8,7 +8,7 @@ let parse_wlang fs =
     let lexbuf = Lexing.from_string fs in 
     Some (Wparser.main Wlexer.token lexbuf)
   with 
-  | _ -> Debug.print "Failed to parse wlang"; None
+  | _ -> Debug.error "Failed to parse wlang"; None
 
 let check_labels (_, _, procl, apl) = 
   let label_set = ref StringSet.empty
@@ -223,10 +223,10 @@ let init_state (decll, initl, procl, _) =
   let eval_exp = eval_exp vars
   in
   List.iter (
-    fun (n,i) -> H.add lims n i; H.add vars n 0
+    fun (n,i) -> H.add lims n (max 0 (i-1)); H.add vars n 0
   ) decll;
   List.iter (
-    fun (n,e) -> H.add vars n (eval_exp e)
+    fun (n,e) -> H.replace vars n (eval_exp e)
   ) initl;
   List.iter (
     fun (i,_) -> H.add ppos i 0
@@ -249,12 +249,7 @@ let next_state procn {lims; vars; ppos} =
       | WAssign (varn, e) -> 
           let nv = (eval_exp vars e)
           in
-          if nv <= 0 then
-            H.replace new_vars varn 0
-          else if nv >= (H.find lims varn) then
-            H.replace new_vars varn (H.find lims varn)
-          else
-            H.replace new_vars varn nv
+          H.replace new_vars varn (max 0 (min nv (H.find lims varn)))
       | _ -> ()
     end;
     match get_next_stmts procn npos with

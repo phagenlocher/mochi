@@ -60,7 +60,7 @@ let get_stmt procn i =
 let label_statements (decll, initl, procl, apl) = 
   let label_proc (pid,stmts) =
     let reg i s = H.add id_stmt_map (pid,i) s in
-    let counter = ref 0 in
+    let counter = ref (-1) in
     let g_counter = ref (-1) in
     let new_id () = 
       incr g_counter; !g_counter
@@ -155,19 +155,9 @@ let build_next_map ((_,_,procl,_) : wlang) =
       begin
         match stmt with
         | WIf (b,ts,es) -> 
-            (* If to both statements *)
-            hadd i [b, ts; WNot b, es]; aux procn ~u:(Some next) [ts; es];
-            (* Statements ends to after if *)
-            (* List.iter (fun (_,li,_) -> hadd li [WBool true, next]) ((last_stmts ts)@(last_stmts es))
-             *)
+            hadd i [b, ts; WNot b, es]; aux procn ~u:(Some next) [ts]; aux procn ~u:(Some next) [es]
         | WWhile (b,s) -> 
-            (* While to whiles stmt and after while *)
-            hadd i [b, s; WNot b, next]; 
-            (* End of while to while *)
-            (*List.iter (fun (_,li,_) -> hadd li [WBool true, curs]) (last_stmts s);
-             *)
-            (* Build map for inside while *)
-            aux procn ~u:(Some (l,i,stmt)) [s]
+            hadd i [b, s; WNot b, next]; aux procn ~u:(Some (l,i,stmt)) [s]
         | WBlock sl -> hadd i [WBool true, List.hd sl]; aux procn ~u:u sl
         | WAssert b -> hadd i [b, next; WNot b, halt]
         | WAwait b -> hadd i [b, next; WNot b, curs]

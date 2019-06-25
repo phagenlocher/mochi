@@ -1,24 +1,28 @@
+open Arg
 open Ltl
 open Util
 
 let ltl_mode = ref false
 let buchi_mode = ref false
+let kripke_mode = ref false
 let formula = ref ""
 let filename = ref ""
 
-let parse_args () =
-  Arg.parse [
+let args = [
     "-f", String (fun x -> formula := x), "specify the LTL formula";
     "-p", String (fun x -> filename := x), "specify i7w-file";
     "-d", Unit (fun () -> Util.Debug.init true), "activate debug output";
-    "-l", Unit (fun () -> ltl_mode := true), "activate LTL mode (no Büchi translation)";
+    "-l", Unit (fun () -> ltl_mode := true), "activate LTL mode (output NNF)";
     "-b", Unit (fun () -> buchi_mode := true), "activate Büchi mode (output HOA)";
+    "-k", Unit (fun () -> kripke_mode := true), "activate Kripke mode (output DOT)";
     "-r", Int (fun i -> 
       print_endline (ltl_to_string (Rand.rand_ltl 10 i)); exit 0
     ), "print a random ltl formula with maximal depth of the given argument"
-  ] (fun x -> ()) ""
+  ] 
 
-let unravel = function Some x -> x | None -> failwith "impossible"
+let parse_args () = Arg.parse args (fun x -> ()) ""
+
+let unravel = function Some x -> x | None -> failwith "unravel failed"
 
 let read_file filename =
   let chan = open_in filename in
@@ -52,26 +56,46 @@ let parse_file filename =
   warn_duplicate_labels proc;
   proc
 
-let main () =
-  let proc = parse_file !filename
-  in
-  Debug.print "Exploring...";
-  let kripke = Wlang.explore_everything proc
-  in
-  Debug.print "Exporting to dot...";
-  print_endline (Wlang.state_map_to_dot kripke)
+let no_formula_check () = 
+  begin
+    if !formula = "" then
+      print_endline ("No formula specified! Please do so with -f!")
+  end;
+  not (!formula = "")
 
-let pre_main () =
-  if !formula = "" then
-    print_endline "No formula specified! Please do so with -f!"
-  else if !ltl_mode then
-    print_endline (ltl_to_string (nnf (unravel (parse_ltl !formula))))
-  else if !buchi_mode then
-    let b = Buchi.ltl_to_generalized_buchi (nnf (unravel (parse_ltl !formula)))
-    in print_endline (Buchi.hoa_of_generalized_buchi b)
-  else 
-    main ()
+let no_file_check () = 
+  begin
+    if !filename = "" then
+      Debug.error "No filename specified! Please do so with -p!"
+  end;
+  not (!filename = "")
+
+let main () =
+  if !ltl_mode then (
+    if no_formula_check () then
+      print_endline (ltl_to_string (nnf (unravel (parse_ltl !formula))))
+  )
+  else if !buchi_mode then (
+    if no_formula_check () then (
+      let b = Buchi.ltl_to_generalized_buchi (nnf (unravel (parse_ltl !formula)))
+      in print_endline (Buchi.hoa_of_generalized_buchi b)
+    )
+  )
+  else if !kripke_mode then (
+    if no_file_check () then (
+      let proc = parse_file !filename
+      in
+      Debug.print "Exploring...";
+      let kripke = Wlang.explore_everything proc
+      in
+      Debug.print "Exporting to dot...";
+      print_endline (Wlang.state_map_to_dot kripke)
+    )
+  ) else (
+    Debug.error "No mode specified!";
+    Arg.usage args ""
+  )
 
 let _ =
   parse_args ();
-  pre_main ()
+  main ()

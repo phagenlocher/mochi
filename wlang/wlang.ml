@@ -184,12 +184,12 @@ type kripke_state = {
 }
 
 let state_to_string s =
-  Seq.fold_left (
+  List.fold_left (
     fun acc (procn,i) -> acc^(
-      Printf.sprintf "%d -> %s; " procn
+      Printf.sprintf "%d: %s; " procn
       (match get_stmt procn i with (l,_,_) -> l)
     )
-  ) "" (H.to_seq s.ppos)
+  ) "" (H.to_seq s.ppos |> seq_to_list |> List.sort (fun (x,_) (y,_) -> x-y))
 
 let copy_state {lims; vars; ppos} = 
   {

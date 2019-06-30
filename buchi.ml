@@ -92,16 +92,19 @@ let ltl_to_generalized_buchi formula =
     | BinOp (Until, f1, f2) -> [f1]
     | BinOp (Release, f1, f2) -> [f2]
     | BinOp (Or, f1, f2) -> [f1]
+    | _ -> failwith "impossible for new1"
   in
   let new2 = function
     | BinOp (Until, f1, f2) -> [f2]
     | BinOp (Release, f1, f2) -> [f1;f2]
     | BinOp (Or, f1, f2) -> [f2]
+    | _ -> failwith "impossible for new2"
   in
   let next1 f = match f with
     | BinOp (Until, _, _) -> [f]
     | BinOp (Release, _, _) -> [f]
     | BinOp (Or, _, _) -> []
+    | _ -> failwith "impossible for next1"
   in
   let is_inconsistent node = 
     (* List.exists (fun x -> List.exists (Ltl.is_negated_of x) node.cur) node.cur
@@ -192,6 +195,7 @@ let ltl_to_generalized_buchi formula =
               expand n2 (expand n1 node_set)
           | BinOp (And, f1, f2) ->
               expand {node with cur=(list_union node.cur (list_diff [f1;f2] node.old)); old=(list_union node.old [f])} node_set
+          | _ -> failwith "impossible for expand" 
         end 
   in
   expand {id=new_id (); incoming=[(-1)]; cur=[formula]; old=[]; next=[]} (H.create 101)
@@ -206,11 +210,12 @@ let atom_prop_assoc formula =
 let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
   (Debug.print "Generating HOA...");
   let aps = atom_prop_assoc formula in
-  let apss = List.map (fun x -> match x with Var p -> "\""^p^"\"") aps |> String.concat " " in
+  let apss = List.map (fun x -> match x with Var p -> "\""^p^"\"" | _ -> failwith "apps expected Var constructor") aps |> String.concat " " in
   let aps_assoc = numbered_assoc aps in
   let ap_number x = match x with
     | Var p -> List.assoc x aps_assoc 
     | UnOp (Not, Var p) -> List.assoc (Var p) aps_assoc
+    | _ -> failwith "ap_number expected atom. prop."
   in
   let apsn = List.length aps in
   let starts = String.concat "\n" (List.map string_of_int start |> List.map (fun x -> "Start: "^x)) in
@@ -218,7 +223,7 @@ let hoa_of_generalized_buchi {states;start;final;transitions;formula} =
   let fin_assoc = numbered_assoc final in
   let fin_numbers n = List.map (
     fun x -> if List.exists ((=) n) x then List.assoc_opt x fin_assoc else None
-  ) final |> List.filter ((<>) None) |> List.map (fun (Some a) -> a) in
+  ) final |> List.filter ((<>) None) |> List.map (fun o -> match o with Some a -> a | None -> failwith "fin_numbers didn't expect None") in
   let fins = List.map (fun (_,x) -> "Inf("^(string_of_int x)^")") fin_assoc |> String.concat "&" in
   let body = List.fold_left (
     fun acc (id,x) -> 

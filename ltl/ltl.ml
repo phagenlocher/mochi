@@ -56,6 +56,7 @@ let rec non_con_aps_ltl l =
     fun x -> match x with
     | Var p -> not (List.exists ((=) (UnOp (Not, Var p))) aps)
     | UnOp (Not, Var p) -> not (List.exists ((=) (Var p)) aps)
+    | _ -> failwith "non_con_aps_ltl expected atomic proposition"
   ) aps in
   Debug.print ("Non. con. atom. props.: "^(ltl_to_string l)^" -> "^(list_to_string ltl_to_string aps));
   aps

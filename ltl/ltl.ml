@@ -1,5 +1,66 @@
 open Util
 
+let unravel_or_and_list ol =
+  let (|&) a b = BinOp (And,a,b)
+  in
+  let (||) a b = BinOp (Or,a,b)
+  in
+  let (|:) a b = match a with
+    | Some x -> x::b
+    | None -> b
+  in
+  let part_unop op l =
+    let obs, r = List.partition (
+      fun x -> match x with UnOp (uop,_) -> uop = op | _ -> false
+    ) l 
+    in
+    List.map (
+      fun x -> match x with UnOp (uop,e) when uop = op -> e | e -> e
+    ) obs, r
+  in
+  let combine unop f acc l =
+    if l = [] then
+      None
+    else
+      Some (UnOp (unop, List.fold_left f acc l))
+  in
+  let unravel_and al =
+    let nexts, rest = part_unop Next al in
+    let globs, rest = part_unop Globally rest in
+    let next = 
+      combine Next (|&) (Bool true) nexts
+    in
+    let glob =
+      combine Globally (|&) (Bool true) globs
+    in
+    List.fold_left (|&) (Bool true) (glob|:(next|:rest))
+  in 
+  let ol = List.map unravel_and ol 
+  in
+  let nexts, rest = part_unop Next ol in
+  let finas, rest = part_unop Finally rest in
+  let next =
+    combine Next (||) (Bool false) nexts
+  in
+  let fins =
+    combine Finally (||) (Bool false) finas
+  in
+  List.fold_left (||) (Bool false) (fins|:(next|:rest))
+
+let rec or_list ltl = 
+  let rec and_list = function
+    | BinOp (And,a,b) -> a::(and_list b)
+    | x -> [x]
+  in
+  match ltl with
+  | BinOp (Or,a,b) -> (and_list a)::(or_list b)
+  | x -> [and_list x]
+
+(* Fix this ugly hack *)
+let pre_simp = function
+  | UnOp (unop, e) -> UnOp (unop, or_list e |> unravel_or_and_list)
+  | e -> or_list e |> unravel_or_and_list
+
 let parse_ltl fs =
   let fix_variables fs =
     (* TODO: Fix lexer *)
@@ -25,7 +86,10 @@ let parse_ltl fs =
     let fs = (fix_variables fs) in
     Debug.print ("Fixed input formula: "^fs);
     let lexbuf = Lexing.from_string fs in 
-    Some (Parser.main Lexer.token lexbuf)
+    Some (
+      (Parser.main Lexer.token lexbuf)
+      |> pre_simp
+    )
   with 
   | _ -> None
 
@@ -187,8 +251,6 @@ and nnf fx =
     | UnOp (Finally, UnOp (Finally, f)) -> simp (UnOp (Finally, simp f))
     | UnOp (Finally, UnOp (Next, f)) -> simp (UnOp (Next, UnOp (Finally, simp f)))
     | UnOp (Globally, UnOp (Next, f)) -> simp (UnOp (Next, UnOp (Globally, simp f)))
-    (*| UnOp (Globally, f) -> BinOp (Release, Bool false, simp f)*)
-    (* | UnOp (Finally, f) -> BinOp (Until, Bool true, simp f) *)
     (* Nothing to simplify *)
     | UnOp (op, f) -> UnOp (op, simp f)
     | BinOp (op, f1, f2) -> BinOp (op, simp f1, simp f2)

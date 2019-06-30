@@ -130,13 +130,6 @@ let rec last_stmts (l,i,stmt) = match stmt with
 
 let build_next_map ((_,_,procl,_) : wlang) = 
   let rec aux procn ?u:(u=None) l =
-    let debug i x = 
-      Debug.print (
-        Printf.sprintf "Next-Map (Proc: %d): %d -> [%s]"
-        procn i
-        (List.fold_left (fun acc (b,i) -> acc^(wbool_to_string b)^", "^(string_of_int i)^"; ") "" x)
-      )
-    in
     let hadd i x = match H.find_opt next_map (procn,i) with
       | None -> 
           H.add next_map (procn,i) x

@@ -263,18 +263,16 @@ let states_neq s1 s2 =
   (hashtbl_neq s1.vars s2.vars) || (hashtbl_neq s1.ppos s2.ppos)
 
 let explore_everything p =
-  let map = ref []
+  let map = H.create 12345
   in
   let ns = ref []
   in
-  let add x y =
-    if List.exists (fun (a,b) -> a=x && b=y) !map then 
-      () 
-    else 
-      map := (x,y)::!map
+  let add x y = match H.find_opt map x with
+    | Some e when e=y -> ()
+    | _ -> H.add map x y
   in
   let news x = 
-    if (List.exists ((=) x) !ns) || (List.exists (fun (a,b) -> a=x) !map) then 
+    if (H.mem map x) || (List.mem x !ns) then 
       () 
     else 
       ns := x::!ns
@@ -289,9 +287,9 @@ let explore_everything p =
     Debug.print ("Frontier-size: "^(List.length olds |> string_of_int));
     ns := [];
     List.iter (fun x -> aux x) olds;
-    ns := List.filter (fun x -> List.for_all (fun (a,_) -> states_neq a x) !map) !ns
+    ns := List.filter (fun x -> not (H.mem map x)) !ns
   done;
-  !map
+  H.to_seq map |> seq_to_list
 
 let state_map_to_dot m = 
   let dot = 

@@ -14,7 +14,7 @@ let rand_ltl vars depth =
       | 1 -> UnOp (rand_choice [Not; Finally; Globally; Next], aux (n-1))
       | _ -> 
           BinOp (
-            rand_choice [And;Or;Until;Wuntil;Release;Srelease],
+            rand_choice [And;Or;Until;Release],
             aux (n-1),
             aux (n-1)
           )

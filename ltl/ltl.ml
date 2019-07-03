@@ -242,10 +242,10 @@ and nnf fx =
     | BinOp (Xor, f1, f2) -> simp (BinOp (Or, (BinOp (And, simp (!!f1), simp f2)), (BinOp (And, simp f1, simp (!!f2)))))
     (* Weak until *)
     | BinOp (Wuntil, f1, f2) when (f1 === f2) -> simp f1
-    | BinOp (Wuntil, f1, f2) -> simp (BinOp (Until, simp f1, simp (BinOp (Or, simp f2, simp (UnOp (Globally, simp f1))))))
+    | BinOp (Wuntil, f1, f2) -> simp (BinOp (Release, simp f2, simp (BinOp (Or, simp f1, simp f2))))
     (* Strong release *)
     | BinOp (Srelease, f1, f2) when (f1 === f2) -> simp f1
-    | BinOp (Srelease, f1, f2) -> simp (BinOp (And, simp (BinOp (Release, simp f1, simp f2)), simp (UnOp (Finally, simp f1))))
+    | BinOp (Srelease, f1, f2) -> simp (BinOp (Until, simp f2, simp (BinOp (And, simp f1, simp f2))))
     (* Globally and Finally  *)
     | UnOp (Globally, UnOp (Globally, f)) -> simp (UnOp (Globally, simp f))
     | UnOp (Finally, UnOp (Finally, f)) -> simp (UnOp (Finally, simp f))

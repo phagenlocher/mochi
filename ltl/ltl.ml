@@ -56,9 +56,9 @@ let rec or_list ltl =
   | BinOp (Or,a,b) -> (and_list a)::(or_list b)
   | x -> [and_list x]
 
-(* Fix this ugly hack *)
-let pre_simp = function
-  | UnOp (unop, e) -> UnOp (unop, or_list e |> unravel_or_and_list)
+(* TODO: Fix this ugly hack *)
+let rec pre_simp = function
+  | UnOp (op, e) -> UnOp (op, pre_simp e )
   | e -> or_list e |> unravel_or_and_list
 
 let parse_ltl fs =

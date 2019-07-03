@@ -106,17 +106,7 @@ let ltl_to_generalized_buchi formula =
     | BinOp (Or, _, _) -> []
     | _ -> failwith "impossible for next1"
   in
-  let is_inconsistent node = 
-    (* List.exists (fun x -> List.exists (Ltl.is_negated_of x) node.cur) node.cur
-     *) false
-  in
   let rec expand node node_set = 
-    if is_inconsistent node then 
-      begin
-      (Debug.print ("Dropping node:\n"^(node_to_string node)));
-      node_set
-      end
-    else
     match node.cur with
     | [] -> 
         begin

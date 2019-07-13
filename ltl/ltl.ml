@@ -88,7 +88,6 @@ let parse_ltl fs =
     let lexbuf = Lexing.from_string fs in 
     Some (
       (Parser.main Lexer.token lexbuf)
-      |> pre_simp
     )
   with 
   | _ -> None
@@ -98,7 +97,7 @@ let subformulae fx =
     begin
       match f with
       | UnOp (_, sf) -> aux sf
-      | BinOp (_, sf1, sf2) -> (aux sf1) @ (aux sf2)
+      | BinOp (_, sf1, sf2) -> list_union (aux sf1) (aux sf2)
       | _ -> []
     end
   in
@@ -125,11 +124,6 @@ let rec non_con_aps_ltl l =
   Debug.print ("Non. con. atom. props.: "^(ltl_to_string l)^" -> "^(list_to_string ltl_to_string aps));
   aps
 
-let is_atomic_proposition = function
-  | Var _ -> true
-  | UnOp (Not, Var _) -> true
-  | _ -> false
-
 let is_negated = function
   | UnOp (Not,_) -> true
   | _ -> false
@@ -143,15 +137,12 @@ let negate_formula f = UnOp (Not, f)
 let rec is_negated_of f1 f2 = 
   (nnf (negate_formula f1) = nnf f2) || (nnf f1 = nnf (negate_formula f2))
 and ltl_eq a b = 
-  (Debug.print ((ltl_to_string a)^" EQ? "^(ltl_to_string b)));
-  let res = match ((nnf a), (nnf b)) with (* fix this *)
+  match ((nnf a), (nnf b)) with (* fix this *)
   | UnOp (op1, f), UnOp (op2, g) -> (op1=op2) && (ltl_eq f g)
   | BinOp (And, f1, f2), BinOp (And, g1, g2)
   | BinOp (Or, f1, f2), BinOp (Or, g1, g2) -> (ltl_eq f1 g1 && ltl_eq f2 g2) || (ltl_eq f1 g2 && ltl_eq f2 g1)
   | BinOp (op1, f1, f2), BinOp (op2, g1, g2) -> (op1=op2) && (ltl_eq f1 g1 && ltl_eq f2 g2)
   | x,y -> x=y
-  in
-  (Debug.print ("EQ = "^(string_of_bool res))); res
 and nnf fx = 
   let (!!) = negate_formula
   in
@@ -278,4 +269,10 @@ and nnf fx =
     | x -> x
   in 
   simp fx |> simp |> aux |> simp |> simp
+
+let is_atomic_proposition x = match x with
+  | Var _ -> true
+  | UnOp (Not, Var _) -> true
+  | _ -> false
+
 

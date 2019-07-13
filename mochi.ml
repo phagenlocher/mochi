@@ -4,6 +4,7 @@ open Util
 
 let ltl_mode = ref false
 let buchi_mode = ref false
+let gbuchi_mode = ref false
 let kripke_mode = ref false
 let formula = ref ""
 let filename = ref ""
@@ -14,9 +15,10 @@ let args = [
     "-d", Unit (fun () -> Util.Debug.init true), "activate debug output";
     "-l", Unit (fun () -> ltl_mode := true), "activate LTL mode (output NNF)";
     "-b", Unit (fun () -> buchi_mode := true), "activate Büchi mode (output HOA)";
+    "-g", Unit (fun () -> gbuchi_mode := true), "in Büchi mode output HOA for generalized Büchi automaton";
     "-k", Unit (fun () -> kripke_mode := true), "activate Kripke mode (output DOT)";
     "-r", Int (fun i -> 
-      print_endline (ltl_to_string (Rand.rand_ltl 10 i)); exit 0
+      print_endline (ltl_to_string (Rand.rand_ltl 4 i)); exit 0
     ), "print a random ltl formula with maximal depth of the given argument"
   ] 
 
@@ -80,7 +82,12 @@ let main () =
   else if !buchi_mode then (
     if no_formula_check () then (
       let b = Buchi.ltl_to_generalized_buchi (nnf (unravel (parse_ltl !formula)))
-      in print_endline (Buchi.hoa_of_generalized_buchi b)
+      in 
+      if !gbuchi_mode then
+          print_endline (Buchi.hoa_of_generalized_buchi b)
+      else
+        let b = Buchi.degeneralize b in
+        print_endline (Buchi.hoa_of_buchi b)
     )
   )
   else if !kripke_mode then (
@@ -94,8 +101,11 @@ let main () =
       print_endline (Wlang.state_map_to_dot kripke)
     )
   ) else (
-    Debug.error "No mode specified!";
-    Arg.usage args ""
+    if (no_file_check ()) && (no_formula_check ()) then (
+      let proc = parse_file !filename in
+      let form = unravel (parse_ltl !formula) in
+      Analysis.start form proc
+    )
   )
 
 let _ =

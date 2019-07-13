@@ -299,3 +299,14 @@ let state_map_to_dot m =
     ) "" m
   in
   Printf.sprintf "digraph k { \n %s }" dot
+
+let ap_holds name aps {lims;vars;ppos} =
+  match List.assoc_opt name aps with
+  | Some bexp -> eval_bool vars bexp
+  | None ->
+    let pos_labels = List.map (
+      fun (p,i) -> (fun (l,_,_) -> l) (get_stmt p i)
+    ) (H.to_seq ppos |> seq_to_list)
+    in
+    List.mem name pos_labels
+

@@ -4,35 +4,52 @@ open Wlang
 
 module H = Hashtbl
 
+let fair = ref false
+
 let print x = print_endline x; flush_all ()
 
 type search_state = {
   bstate : int;
-  kstate : kripke_state
+  kstate : kripke_state;
+  last_procn : int;
 }
+
+let pap_rgx = Str.regexp "_process\(\([1-9]\)+\)"
+
+let is_process_ap x = 
+  Str.string_match pap_rgx x 0
+
+let matched_procn x = 
+  Str.matched_group 2 x |> int_of_string
 
 let intersect_states (b:buchi) (_,_,_,aps) ks bs =
   List.map (
-    fun k -> 
+    fun (p,k) -> 
       List.map (
-        fun b -> {bstate=b;kstate=k}
+          fun b -> {bstate=b;kstate=k;last_procn=p}
       ) bs
   ) ks
   |> List.flatten |> List.filter (
-    fun {bstate;kstate} ->
+    fun {bstate;kstate;last_procn} -> 
+      let handle_ap p =
+          if is_process_ap p then
+            last_procn = (matched_procn p)
+          else
+            ap_holds p aps kstate
+      in
       let formulae = List.assoc bstate b.states
       in
       List.for_all (
         fun f -> match f with
-        | Var p -> ap_holds p aps kstate
-        | UnOp (Not, Var p) -> not (ap_holds p aps kstate)
+        | Var p -> handle_ap p
+        | UnOp (Not, Var p) -> not (handle_ap p)
         | _ -> failwith "intersect states: bstate has non ap!"
       ) formulae
   )
 
 let init_state (b:buchi) p =
   let kstate = init_state p in
-  intersect_states b p [kstate] b.start
+  intersect_states b p [-1, kstate] b.start
 
 let next_states (b:buchi) p s =
   let ks = Wlang.next_states s.kstate
@@ -91,14 +108,14 @@ let dfs (b:buchi) p =
             let (u,c) = pop () in
             let u = ref u in
             let unum = ref (num !u) in
-            Debug.print (Printf.sprintf "u %d - t %d" !unum tnum);
+            (* Debug.print (Printf.sprintf "u %d - t %d" !unum tnum); *)
             accept_check !u;
             d := list_union c !d;
             while !unum > tnum do
               let (nu,c) = pop () in
               u := nu;
               unum := num !u;
-              Debug.print (Printf.sprintf "u %d - t %d" !unum tnum);
+              (* Debug.print (Printf.sprintf "u %d - t %d" !unum tnum); *)
               accept_check !u;
               d := list_union c !d;             
             done;
@@ -113,7 +130,33 @@ let dfs (b:buchi) p =
   in
   List.iter (fun s -> aux s; clear ()) (init_state b p)
 
+let make_fair_ltl f (_,_,procl,_) =
+  let make_proc_ap pid = 
+    Var (Printf.sprintf "_process%d" pid)
+  in
+  let gf x = 
+    UnOp (Globally, UnOp (Finally, x))
+  in
+  let rec and_chain = function
+    | [] -> failwith "and_chain got []"
+    | [x] -> x
+    | x::xs -> BinOp (And, x, and_chain xs)
+  in
+  let inv = List.map (fun (pid,_) -> gf (make_proc_ap pid)) procl |> and_chain
+  in
+  BinOp (Imp, inv, f)
+
 let start f p = 
+  let f = (
+    if !fair then
+      begin
+        print "Generating fairness constraint...";
+        make_fair_ltl f p
+      end
+    else 
+      f
+  )
+  in
   print "Generating NNF of negated formula...";
   let nf = Ltl.nnf (Ltl.negate_formula f) in
   Debug.print (ltl_to_string nf);

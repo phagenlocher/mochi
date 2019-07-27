@@ -17,6 +17,7 @@ let args = [
     "-b", Unit (fun () -> buchi_mode := true), "activate Büchi mode (output HOA)";
     "-g", Unit (fun () -> gbuchi_mode := true), "in Büchi mode output HOA for generalized Büchi automaton";
     "-k", Unit (fun () -> kripke_mode := true), "activate Kripke mode (output DOT)";
+    "-fair", Unit (fun () -> Analysis.fair := true), "lets be fair :)";
     "-r", Int (fun i -> 
       print_endline (ltl_to_string (Rand.rand_ltl 4 i)); exit 0
     ), "print a random ltl formula with maximal depth of the given argument"

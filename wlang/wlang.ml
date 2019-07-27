@@ -116,7 +116,7 @@ and get_stmt_from_wstmt stmt p =
 (* (int*int) -> (wbool * wlstmt) list *)
 let next_map = H.create 100
 
-let get_next_stmts procn i = if i=(-1) then [] else H.find next_map (procn, i)
+let get_next_stmts procn i = if i=(-1) then [WBool true, ("halt", (-1), WHalt)] else H.find next_map (procn, i)
 
 let rec tl = function
   | [] -> failwith "tl failed on []"
@@ -218,13 +218,13 @@ let init_state (decll, initl, procl, _) =
 
 let next_state procn {lims; vars; ppos} =
   let old_state = {lims; vars; ppos} in
-  let new_vars = H.copy vars in
-  let new_ppos = H.copy ppos in
-  let new_state = {lims; vars=new_vars; ppos=new_ppos} in
   let npos = (H.find ppos procn) in
   if npos = (-1) then 
     old_state
   else
+  let new_vars = H.copy vars in
+  let new_ppos = H.copy ppos in
+  let new_state = {lims; vars=new_vars; ppos=new_ppos} in
   match get_stmt procn npos with (_,i,stmt) -> 
     (if npos <> i then Debug.error "npos is not stmt id!");
     begin
@@ -248,7 +248,7 @@ let next_state procn {lims; vars; ppos} =
 
 let next_states state = 
   List.map (
-    fun procn -> next_state procn state
+    fun procn -> procn, next_state procn state
   ) (H.to_seq_keys state.ppos |> seq_to_list)
 
 let hashtbl_neq h1 h2 =
@@ -277,7 +277,7 @@ let explore_everything p =
     else 
       ns := x::!ns
   in
-  let rec aux s = match next_states s with
+  let rec aux s = match List.map snd (next_states s) with
     | [] -> ()
     | sl -> List.iter (fun x -> add s x; news x) sl
   in

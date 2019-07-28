@@ -20,7 +20,7 @@ let state_to_string x =
   (Wlang.state_to_string x.kstate)
   x.last_procn
 
-let pap_rgx = Str.regexp "_process\(\([1-9]\)+\)"
+let pap_rgx = Str.regexp "_process\\(\\([1-9]\\)+\\)"
 
 let is_process_ap x = 
   Str.string_match pap_rgx x 0

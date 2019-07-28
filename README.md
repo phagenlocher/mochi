@@ -15,15 +15,17 @@ No specified mode means that mochi will try to do model checking with a supplied
 So, in order to do model checking one would use:
 ```./mochi.native -f <formula> -p <program>```
 
+In order to force fairness in process execution one can use **-fair**:
+```./mochi.native -f <formula> -p <program> -fair```
+
 ### Known Bugs
 * Single LTL formulas do NOT produce the correct GBA (see failing-ltl.txt)
-* It seems like model checking is not 100% correct
 
 ### How to build
 The system needs to have OCaml installed. 
 ``` make ``` should do the trick and create _mochi.native_ as a soft link to the executable.
 
-### How to test 
+### How to test Büchi translation
 _test\_inf.sh_ runs ltlcross with mochi and ltl2tgba until an error was found.
 The formulas are generated randomly by mochi. A complexity of more than 3 takes _alot_ of time.
 

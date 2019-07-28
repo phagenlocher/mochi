@@ -1,5 +1,5 @@
 (_ap2) U (_min1)
 !(F (_end2))
-G (_end1 -> !(_ap0))
+(_end1 -> !(_ap0))
 _min1 -> (G !(_ap2))
 (_end1 -> (G (_ap0))) | (_end1 -> (G !(_ap2)))

@@ -47,10 +47,10 @@ beginprocess
 	{
 		skip;
 	}
-	_end3: z := 1;
+	z := 1;
+	_end3: skip;
 endprocess
 
-_ap0: 1 <= x;
-_ap1: 2 <= x;
-_ap2: z = 1;
-_ap3: y = 0;
+_ap0: z = 1;
+_ap1: y = 0;
+_ap2: z = 0;

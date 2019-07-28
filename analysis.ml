@@ -14,6 +14,12 @@ type search_state = {
   last_procn : int;
 }
 
+let state_to_string x =
+  Printf.sprintf "bstate: %d\nkstate: %s\nlprocn:%d\n"
+  x.bstate
+  (Wlang.state_to_string x.kstate)
+  x.last_procn
+
 let pap_rgx = Str.regexp "_process\(\([1-9]\)+\)"
 
 let is_process_ap x = 
@@ -108,14 +114,12 @@ let dfs (b:buchi) p =
             let (u,c) = pop () in
             let u = ref u in
             let unum = ref (num !u) in
-            (* Debug.print (Printf.sprintf "u %d - t %d" !unum tnum); *)
             accept_check !u;
             d := list_union c !d;
             while !unum > tnum do
               let (nu,c) = pop () in
               u := nu;
               unum := num !u;
-              (* Debug.print (Printf.sprintf "u %d - t %d" !unum tnum); *)
               accept_check !u;
               d := list_union c !d;             
             done;
@@ -128,7 +132,10 @@ let dfs (b:buchi) p =
       List.iter (fun x -> set x false (num x)) c
     )
   in
-  List.iter (fun s -> aux s; clear ()) (init_state b p)
+  let is = init_state b p
+  in
+  Debug.print ("Start states: "^(list_to_string (fun s -> string_of_int s.bstate) is));
+  List.iter (fun s -> Debug.print ("DFS starting on "^(string_of_int s.bstate)); aux s; clear ()) (is)
 
 let make_fair_ltl f (_,_,procl,_) =
   let make_proc_ap pid = 

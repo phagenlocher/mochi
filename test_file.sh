@@ -1,3 +1,5 @@
+#!/bin/sh
+
 if [ -z "$1" ]
 then
 	echo "Usage: ./test_file.sh <file to test> <additional arguments for mochi>"

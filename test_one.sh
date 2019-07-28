@@ -1,3 +1,5 @@
+#!/bin/sh
+
 if [ -z "$1" ]
 then
 	echo "Usage: ./test_one.sh <formula to test> <additional arguments for mochi>"

@@ -1,24 +1,29 @@
 # mochi
 
-### Done 
-* Basic LTL simplification
-* LTL to NNF
-* NNF to GBA based on algorithm by Gerth et al.
-* GBA to HOA
-* Whilelang Parsing
+### How to use
 
-### Planned
-* Better LTL simplifications / rewriting
-* Ongoing bugfixing ;)
+The behaviour of mochi is decided by the mode it is in.
+* -l activates LTL mode (requires LTL formula and outputs NNF of the formula)
+* -b activates Büchi mode (requires LTL formula and outputs HOA)
+* -g if Büchi mode is active the automaton will not be degeneralized before outputting HOA
+* -k activates Kripke mode (requires i7w program and outputs DOT)
+
+No specified mode means that mochi will try to do model checking with a supplied formula and program.
+
+**-f** is used to supply the formula and **-p** to supply the program.
+
+So, in order to do model checking one would use:
+```./mochi.native -f <formula> -p <program>```
 
 ### Known Bugs
 * Single LTL formulas do NOT produce the correct GBA (see failing-ltl.txt)
+* It seems like model checking is not 100% correct
 
 ### How to build
 The system needs to have OCaml installed. 
 ``` make ``` should do the trick and create _mochi.native_ as a soft link to the executable.
 
-### How to test
+### How to test 
 _test\_inf.sh_ runs ltlcross with mochi and ltl2tgba until an error was found.
 The formulas are generated randomly by mochi. A complexity of more than 3 takes _alot_ of time.
 

@@ -1,5 +1,9 @@
 # mochi
 
+### General Info
+
+**mochi**, a retired student project, is a tiny LTL model checker for a concurrent programming language.
+
 ### How to use
 
 The behaviour of mochi is decided by the mode it is in.

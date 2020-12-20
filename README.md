@@ -2,7 +2,9 @@
 
 ### General Info
 
-**mochi**, a retired student project, is a tiny LTL model checker for a concurrent programming language.
+**mochi**, a retired student project, is a tiny LTL model checker for a simplified, concurrent programming language. It generates a Büchi automaton from the negation normal form of an LTL formula and a Kripke structure from the program, taking into account every possible order of process execution. It verifies the formula by intersecting the automaton with the structure and searching for infinite loops with DFS. 
+
+This implementation is *highly* inefficient.
 
 ### How to use
 
